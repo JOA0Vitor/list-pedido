@@ -3,7 +3,7 @@ import 'package:pedidosdp/models/pedidos.dart';
 import 'package:pedidosdp/page/pedido_card.dart';
 
 class PedidosScreen extends StatelessWidget {
-  final List<Pedido> pedidos;
+  final List<PedidoModel> pedidos;
 
   const PedidosScreen({super.key, required this.pedidos});
 

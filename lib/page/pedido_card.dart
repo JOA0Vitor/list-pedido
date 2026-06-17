@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/pedidos.dart';
 
 class PedidoCard extends StatelessWidget {
-  final Pedido pedido;
+  final PedidoModel pedido;
   final VoidCallback? onTap;
 
-  const PedidoCard({
-    super.key,
-    required this.pedido,
-    this.onTap,
-  });
+  const PedidoCard({super.key, required this.pedido, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -55,19 +51,18 @@ class PedidoCard extends StatelessWidget {
             const SizedBox(width: 15),
             Expanded(
               child: _EtapaColumn(
-                etapa: pedido.etapa,
                 color: pedido.etapaColor,
+                codEtapa: pedido.codEtapa,
               ),
             ),
             const SizedBox(width: 20),
-            _AcoesRow(concluido: pedido.concluido),
+            _AcoesRow(concluido: pedido.concluido, codEtapa: pedido.codEtapa),
           ],
         ),
       ),
     );
   }
 }
-
 
 class _InfoColumn extends StatelessWidget {
   final String label;
@@ -100,10 +95,13 @@ class _InfoColumn extends StatelessWidget {
 }
 
 class _EtapaColumn extends StatelessWidget {
-  final String etapa;
   final Color color;
+  final int codEtapa;
 
-  const _EtapaColumn({required this.etapa, required this.color});
+  const _EtapaColumn({
+    required this.color,
+    required this.codEtapa,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +110,16 @@ class _EtapaColumn extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          etapa.toUpperCase(),
+          codEtapa == 3
+              ? 'SEPARAÇÃO & ROMANEIO'
+              : codEtapa == 4
+              ? 'BIPAGEM & CONFERÊNCIA'
+              : codEtapa == 5
+              ? 'FATURAMENTO'
+              : codEtapa == 9
+              ? 'CARREGAMENTO CONCLUÍDO'
+              : 'ERRO ;-;',
+          // etapa.toUpperCase(),
           style: const TextStyle(
             color: Color(0xFF0B1628),
             fontWeight: FontWeight.bold,
@@ -122,7 +129,15 @@ class _EtapaColumn extends StatelessWidget {
         Container(
           margin: const EdgeInsets.only(top: 10),
           height: 6,
-          color: color,
+          color: codEtapa == 3
+              ? Color(0xFF607d8b)
+              : codEtapa == 4
+              ? Color(0xFFFE8D00)
+              : codEtapa == 5
+              ? Color(0xFF4e2da2)
+              : codEtapa == 9
+              ? Color(0xFF3d7d24)
+              : Color(0xFFFE8D00),
         ),
       ],
     );
@@ -131,8 +146,9 @@ class _EtapaColumn extends StatelessWidget {
 
 class _AcoesRow extends StatelessWidget {
   final bool concluido;
+  final int codEtapa;
 
-  const _AcoesRow({required this.concluido});
+  const _AcoesRow({required this.concluido, required this.codEtapa});
 
   @override
   Widget build(BuildContext context) {
@@ -141,14 +157,22 @@ class _AcoesRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(
-          concluido ? Icons.check_circle : Icons.check_circle_outline,
-          color: const Color(0xFFFE8D00),
+          concluido ? Icons.check_circle : Icons.remove_circle_outline,
+          color: codEtapa == 3
+              ? Color(0xFF607d8b)
+              : codEtapa == 4
+              ? Color(0xFFFE8D00)
+              : codEtapa == 5
+              ? Color(0xFF4e2da2)
+              : codEtapa == 9
+              ? Color(0xFF3d7d24)
+              : Color(0xFFFE8D00),
           size: 25,
         ),
         const SizedBox(width: 10),
-        const Icon(
+        Icon(
           Icons.arrow_forward_ios_rounded,
-          color: Color(0xFF677383),
+          color: Color(0xFF607d8b),
           size: 15,
         ),
       ],

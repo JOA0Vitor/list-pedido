@@ -5,7 +5,7 @@ import 'package:pedidosdp/page/list_pedidos.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   //https://187.85.164.196/api/comercial/v10/pedidoVenda?dataDigitacaoInicio=2026-06-16&dataDigitacaoFim=2026-06-16
-  //modulo = comercial - serviço = Comercial v1.0 
+  //modulo = comercial - serviço = Comercial v1.0
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -27,117 +27,172 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            onPressed: () {
-            },
+            onPressed: () {},
             icon: const Icon(Icons.info_outline, color: Color(0xFF0043AC)),
           ),
         ],
       ),
       body: PedidosScreen(
         pedidos: [
-          Pedido(
+          PedidoModel(
             numero: 4082,
             dataHora: '12/06/2026',
             cliente: 'teste123',
-            etapa: 'Separação & Romaneio',
             etapaColor: const Color(0xFFFE8D00),
+            codEtapa: 3,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4083,
             dataHora: '13/06/2026',
             cliente: 'cliente2',
-            etapa: 'Expedição',
             etapaColor: const Color(0xFF0043AC),
             concluido: true,
+            codEtapa: 4,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4084,
             dataHora: '14/06/2026',
             cliente: 'cliente3',
-            etapa: 'Entrega',
             etapaColor: const Color(0xFF677383),
+            codEtapa: 5,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4085,
             dataHora: '15/06/2026',
             cliente: 'cliente4',
-            etapa: 'Recebimento',
             etapaColor: const Color(0xFF0B1628),
+            codEtapa: 9,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4086,
             dataHora: '16/06/2026',
             cliente: 'cliente5',
-            etapa: 'Entrega',
             etapaColor: const Color(0xFF677383),
+            codEtapa: 4,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4087,
             dataHora: '17/06/2026',
             cliente: 'cliente6',
-            etapa: 'Recebimento',
             etapaColor: const Color(0xFF0B1628),
             concluido: true,
+            codEtapa: 9,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4088,
             dataHora: '18/06/2026',
             cliente: 'cliente7',
-            etapa: 'Entrega',
             etapaColor: const Color(0xFF677383),
+            codEtapa: 4,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4089,
             dataHora: '19/06/2026',
             cliente: 'cliente8',
-            etapa: 'Recebimento',
             etapaColor: const Color(0xFF0B1628),
             concluido: true,
+            codEtapa: 9,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4090,
             dataHora: '20/06/2026',
             cliente: 'cliente9',
-            etapa: 'Entrega',
             etapaColor: const Color(0xFF677383),
+            codEtapa: 5,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4091,
             dataHora: '21/06/2026',
             cliente: 'cliente10',
-            etapa: 'Recebimento',
             etapaColor: const Color(0xFF0B1628),
             concluido: true,
+            codEtapa: 9,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4092,
             dataHora: '22/06/2026',
             cliente: 'cliente11',
-            etapa: 'Entrega',
             etapaColor: const Color(0xFF677383),
+            codEtapa: 3,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4093,
             dataHora: '23/06/2026',
             cliente: 'cliente12',
-            etapa: 'Recebimento',
             etapaColor: const Color(0xFF0B1628),
             concluido: true,
+            codEtapa: 9,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4094,
             dataHora: '24/06/2026',
             cliente: 'cliente13',
-            etapa: 'Entrega',
             etapaColor: const Color(0xFF677383),
+            codEtapa: 5,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
-          Pedido(
+          PedidoModel(
             numero: 4095,
             dataHora: '25/06/2026',
             cliente: 'cliente14',
-            etapa: 'Recebimento',
             etapaColor: const Color(0xFF0B1628),
             concluido: true,
+            codEtapa: 4,
+            codCliente: 1,
+            codPedido: '123456789',
+            codRepresentante: 1,
+            dataEmissao: '2026-06-16',
           ),
         ],
       ),
