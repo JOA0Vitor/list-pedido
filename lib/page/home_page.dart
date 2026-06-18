@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/pedidos.dart';
 import 'package:pedidosdp/page/list_pedidos.dart';
+import 'package:pedidosdp/service/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,10 +14,58 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late final ApiService _api;
+  late Future<PaginatedResponsePedido<PedidoModel>> _futurePedidos;
+
+  Future<void> _autenticar() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      await FirebaseAuth.instance.signInAnonymously();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _autenticar();
+    _api = ApiService(
+      apiToken:
+          'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5Mzc2MTQzMjgsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6Ik1WbkpKaGdGIiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.9s0aPo2hlN2xIVdc7pnazlUfU8t3m6C_864XHkv2XNQhU6lpE7vYCSyWb9Vf7lHvUTTEPsSdqwm5hBadArJYFQ',
+    );
+    _futurePedidos = _api.getListPedidos(
+      2, // empresa
+      '2026-06-18',
+      '2026-06-18',
+    );
+  }
+
+  @override
+  void dispose() {
+    _api.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFE0E5EB),
+      endDrawer: Drawer(
+
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Text('Cabeçalho do Menu'),
+            ),
+            ListTile(
+              title: Text('Item 1'),
+              onTap: () {
+                // Ação do item
+              },
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: Color(0xFFF7FBFD),
         title: Text(
@@ -25,177 +75,196 @@ class _HomePageState extends State<HomePage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.info_outline, color: Color(0xFF0043AC)),
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     onPressed: () {},
+        //     icon: const Icon(Icons.info_outline, color: Color(0xFF0043AC)),
+        //   ),
+        // ],
       ),
-      body: PedidosScreen(
-        pedidos: [
-          PedidoModel(
-            numero: 4082,
-            dataHora: '12/06/2026',
-            cliente: 'teste123',
-            etapaColor: const Color(0xFFFE8D00),
-            codEtapa: 3,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4083,
-            dataHora: '13/06/2026',
-            cliente: 'cliente2',
-            etapaColor: const Color(0xFF0043AC),
-            concluido: true,
-            codEtapa: 4,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4084,
-            dataHora: '14/06/2026',
-            cliente: 'cliente3',
-            etapaColor: const Color(0xFF677383),
-            codEtapa: 5,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4085,
-            dataHora: '15/06/2026',
-            cliente: 'cliente4',
-            etapaColor: const Color(0xFF0B1628),
-            codEtapa: 9,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4086,
-            dataHora: '16/06/2026',
-            cliente: 'cliente5',
-            etapaColor: const Color(0xFF677383),
-            codEtapa: 4,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4087,
-            dataHora: '17/06/2026',
-            cliente: 'cliente6',
-            etapaColor: const Color(0xFF0B1628),
-            concluido: true,
-            codEtapa: 9,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4088,
-            dataHora: '18/06/2026',
-            cliente: 'cliente7',
-            etapaColor: const Color(0xFF677383),
-            codEtapa: 4,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4089,
-            dataHora: '19/06/2026',
-            cliente: 'cliente8',
-            etapaColor: const Color(0xFF0B1628),
-            concluido: true,
-            codEtapa: 9,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4090,
-            dataHora: '20/06/2026',
-            cliente: 'cliente9',
-            etapaColor: const Color(0xFF677383),
-            codEtapa: 5,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4091,
-            dataHora: '21/06/2026',
-            cliente: 'cliente10',
-            etapaColor: const Color(0xFF0B1628),
-            concluido: true,
-            codEtapa: 9,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4092,
-            dataHora: '22/06/2026',
-            cliente: 'cliente11',
-            etapaColor: const Color(0xFF677383),
-            codEtapa: 3,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4093,
-            dataHora: '23/06/2026',
-            cliente: 'cliente12',
-            etapaColor: const Color(0xFF0B1628),
-            concluido: true,
-            codEtapa: 9,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4094,
-            dataHora: '24/06/2026',
-            cliente: 'cliente13',
-            etapaColor: const Color(0xFF677383),
-            codEtapa: 5,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-          PedidoModel(
-            numero: 4095,
-            dataHora: '25/06/2026',
-            cliente: 'cliente14',
-            etapaColor: const Color(0xFF0B1628),
-            concluido: true,
-            codEtapa: 4,
-            codCliente: 1,
-            codPedido: '123456789',
-            codRepresentante: 1,
-            dataEmissao: '2026-06-16',
-          ),
-        ],
+      body: FutureBuilder<PaginatedResponsePedido<PedidoModel>>(
+        future: _futurePedidos,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Erro: ${snapshot.error}'));
+          }
+          final pedidos = snapshot.data!.data;
+          return Column(
+            children: [
+              Text(pedidos.length.toString()),
+              Expanded(child: PedidosScreen(pedidos: pedidos)),
+            ],
+          );
+        },
       ),
+
+      // body: PedidosScreen(
+      //   pedidos: [
+      //     PedidoModel(
+      //       numero: 4082,
+      //       dataHora: '12/06/2026',
+      //       cliente: 'teste123',
+      //       etapaColor: const Color(0xFFFE8D00),
+      //       codEtapa: 3,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4083,
+      //       dataHora: '13/06/2026',
+      //       cliente: 'cliente2',
+      //       etapaColor: const Color(0xFF0043AC),
+      //       concluido: true,
+      //       codEtapa: 4,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4084,
+      //       dataHora: '14/06/2026',
+      //       cliente: 'cliente3',
+      //       etapaColor: const Color(0xFF677383),
+      //       codEtapa: 5,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4085,
+      //       dataHora: '15/06/2026',
+      //       cliente: 'cliente4',
+      //       etapaColor: const Color(0xFF0B1628),
+      //       codEtapa: 9,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4086,
+      //       dataHora: '16/06/2026',
+      //       cliente: 'cliente5',
+      //       etapaColor: const Color(0xFF677383),
+      //       codEtapa: 4,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4087,
+      //       dataHora: '17/06/2026',
+      //       cliente: 'cliente6',
+      //       etapaColor: const Color(0xFF0B1628),
+      //       concluido: true,
+      //       codEtapa: 9,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4088,
+      //       dataHora: '18/06/2026',
+      //       cliente: 'cliente7',
+      //       etapaColor: const Color(0xFF677383),
+      //       codEtapa: 4,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4089,
+      //       dataHora: '19/06/2026',
+      //       cliente: 'cliente8',
+      //       etapaColor: const Color(0xFF0B1628),
+      //       concluido: true,
+      //       codEtapa: 9,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4090,
+      //       dataHora: '20/06/2026',
+      //       cliente: 'cliente9',
+      //       etapaColor: const Color(0xFF677383),
+      //       codEtapa: 5,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4091,
+      //       dataHora: '21/06/2026',
+      //       cliente: 'cliente10',
+      //       etapaColor: const Color(0xFF0B1628),
+      //       concluido: true,
+      //       codEtapa: 9,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4092,
+      //       dataHora: '22/06/2026',
+      //       cliente: 'cliente11',
+      //       etapaColor: const Color(0xFF677383),
+      //       codEtapa: 3,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4093,
+      //       dataHora: '23/06/2026',
+      //       cliente: 'cliente12',
+      //       etapaColor: const Color(0xFF0B1628),
+      //       concluido: true,
+      //       codEtapa: 9,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4094,
+      //       dataHora: '24/06/2026',
+      //       cliente: 'cliente13',
+      //       etapaColor: const Color(0xFF677383),
+      //       codEtapa: 5,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //     PedidoModel(
+      //       numero: 4095,
+      //       dataHora: '25/06/2026',
+      //       cliente: 'cliente14',
+      //       etapaColor: const Color(0xFF0B1628),
+      //       concluido: true,
+      //       codEtapa: 4,
+      //       codCliente: 1,
+      //       codPedido: '123456789',
+      //       codRepresentante: 1,
+      //       dataEmissao: '2026-06-16',
+      //     ),
+      //   ],
+      // ),
     );
   }
 

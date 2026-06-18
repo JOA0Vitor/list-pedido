@@ -23,12 +23,7 @@ class PaginatedResponsePedido<T> {
 }
 
 class PedidoModel {
-  final int numero;
-  final String dataHora;
-  final String cliente;
 
-  final Color etapaColor;
-  final bool concluido;
   ///////////////////////
   final int codEtapa;
   final int codCliente;
@@ -36,13 +31,8 @@ class PedidoModel {
   final int codRepresentante;
   final String dataEmissao;
 
-
   const PedidoModel({
-    required this.numero,
-    required this.dataHora,
-    required this.cliente,
-    this.concluido = false,
-    required this.etapaColor,
+  
     ///////////////////
     required this.codEtapa,
     required this.codCliente,
@@ -52,27 +42,35 @@ class PedidoModel {
   });
 
   factory PedidoModel.fromJson(Map<String, dynamic> json) {
+    final codEtapa = json['codEtapa'] as int? ?? 0;
+
     return PedidoModel(
-      numero: json['numero'] as int,
-      dataHora: json['dataHora'] as String,
-      cliente: json['cliente'] as String,
-      etapaColor: Color(json['etapaColor'] as int),
-      concluido: json['concluido'] as bool,
-      codEtapa: json['codEtapa'] as int,
-      codCliente: json['codCliente'] as int,
-      codPedido: json['codPedido'] as String,
-      codRepresentante: json['codRepresentante'] as int,
-      dataEmissao: json['dataEmissao'] as String,
+    // exemplo: ajuste pra sua regra real
+      codEtapa: codEtapa,
+      codCliente: json['codCliente'] as int? ?? 0,
+      codPedido: json['codPedido']?.toString() ?? '',
+      codRepresentante: json['codRepresentante'] as int? ?? 0,
+      dataEmissao: json['dataEmissao'] as String? ?? '',
     );
+  }
+  static Color corPorEtapa(int codEtapa) {
+    switch (codEtapa) {
+      case 1:
+        return const Color(0xFF9E9E9E);
+      case 4:
+        return const Color(0xFFFE8D00);
+      case 5:
+        return const Color(0xFF4e2da2);
+      case 9:
+        return const Color(0xFF3d7d24);
+      default:
+        return const Color(0xFF9E9E9E);
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'numero': numero,
-      'dataHora': dataHora,
-      'cliente': cliente,
-      'etapaColor': etapaColor,
-      'concluido': concluido,
+    
       'codEtapa': codEtapa,
       'codCliente': codCliente,
       'codPedido': codPedido,

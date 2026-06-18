@@ -21,7 +21,7 @@ class PedidoCard extends StatelessWidget {
           children: [
             _InfoColumn(
               label: 'N° Pedido',
-              value: pedido.numero.toString(),
+              value: pedido.codPedido.toString(),
               valueStyle: const TextStyle(
                 color: Color(0xFF0043AC),
                 fontWeight: FontWeight.bold,
@@ -31,7 +31,7 @@ class PedidoCard extends StatelessWidget {
             const SizedBox(width: 10),
             _InfoColumn(
               label: 'DATA / HORA',
-              value: pedido.dataHora,
+              value: pedido.dataEmissao,
               valueStyle: const TextStyle(
                 color: Color(0xFF0B1628),
                 fontWeight: FontWeight.w300,
@@ -41,7 +41,7 @@ class PedidoCard extends StatelessWidget {
             const SizedBox(width: 14),
             _InfoColumn(
               label: 'CLIENTE',
-              value: pedido.cliente,
+              value: pedido.codCliente.toString(),
               valueStyle: const TextStyle(
                 color: Color(0xFF0B1628),
                 fontWeight: FontWeight.bold,
@@ -51,12 +51,23 @@ class PedidoCard extends StatelessWidget {
             const SizedBox(width: 15),
             Expanded(
               child: _EtapaColumn(
-                color: pedido.etapaColor,
+                color: pedido.codEtapa == 3
+                    ? Color(0xFFFE8D00)
+                    : pedido.codEtapa == 4
+                    ? Color(0xFF4CAF50)
+                    : pedido.codEtapa == 5
+                    ? Color(0xFF677383)
+                    : pedido.codEtapa == 9
+                    ? Color(0xFF9E9E9E)
+                    : Color(0xFF2196F3),
                 codEtapa: pedido.codEtapa,
               ),
             ),
             const SizedBox(width: 20),
-            _AcoesRow(concluido: pedido.concluido, codEtapa: pedido.codEtapa),
+            _AcoesRow(
+              concluido: pedido.codEtapa == 4,
+              codEtapa: pedido.codEtapa,
+            ),
           ],
         ),
       ),
@@ -98,10 +109,7 @@ class _EtapaColumn extends StatelessWidget {
   final Color color;
   final int codEtapa;
 
-  const _EtapaColumn({
-    required this.color,
-    required this.codEtapa,
-  });
+  const _EtapaColumn({required this.color, required this.codEtapa});
 
   @override
   Widget build(BuildContext context) {
@@ -158,15 +166,16 @@ class _AcoesRow extends StatelessWidget {
       children: [
         Icon(
           concluido ? Icons.check_circle : Icons.remove_circle_outline,
-          color: codEtapa == 3
-              ? Color(0xFF607d8b)
-              : codEtapa == 4
-              ? Color(0xFFFE8D00)
-              : codEtapa == 5
-              ? Color(0xFF4e2da2)
-              : codEtapa == 9
-              ? Color(0xFF3d7d24)
-              : Color(0xFFFE8D00),
+          color: PedidoModel.corPorEtapa(codEtapa),
+          // color: codEtapa == 3
+          //     ? Color(0xFF607d8b)
+          //     : codEtapa == 4
+          //     ? Color(0xFFFE8D00)
+          //     : codEtapa == 5
+          //     ? Color(0xFF4e2da2)
+          //     : codEtapa == 9
+          //     ? Color(0xFF3d7d24)
+          //     : Color(0xFFFE8D00),
           size: 25,
         ),
         const SizedBox(width: 10),
