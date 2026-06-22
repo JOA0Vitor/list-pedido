@@ -6,9 +6,21 @@ import 'package:pedidosdp/widgets/status_etapa.dart';
 
 class PedidoCard extends StatelessWidget {
   final PedidoModel pedido;
+  final String nomeCliente;
   final VoidCallback? onTap;
 
-  const PedidoCard({super.key, required this.pedido, this.onTap});
+  const PedidoCard({
+    super.key,
+    required this.pedido,
+    required this.nomeCliente,
+    this.onTap,
+  });
+
+  String _primeirosDoisNomes(String nome) {
+    final partes = nome.trim().split(' ');
+    return partes.take(1).join(' ');
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +58,8 @@ class PedidoCard extends StatelessWidget {
             const SizedBox(width: 14),
             InfoColumn(
               label: 'CLIENTE',
-              value: pedido.codCliente.toString(),
+              // value: pedido.codCliente.toString(),
+              value: _primeirosDoisNomes(nomeCliente),
               valueStyle: const TextStyle(
                 color: Color(0xFF0B1628),
                 fontWeight: FontWeight.bold,
@@ -111,8 +124,6 @@ class PedidoCard extends StatelessWidget {
 //     );
 //   }
 // }
-
-
 
 class _AcoesRow extends StatelessWidget {
   final bool concluido;

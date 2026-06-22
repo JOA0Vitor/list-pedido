@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -8,7 +9,9 @@ import 'package:pedidosdp/models/pedidos_model.dart';
 
 class ApiService {
   static const String _baseUrl = 'https://187.85.164.196/api/comercial/v10';
-  final int empresa = 2; 
+  static const String _baseUrlClientes =
+      'https://187.85.164.196/api/cadastrosgerais/v10';
+  final int empresa = 2;
 
   final String apiToken;
   late final http.Client _client;
@@ -38,64 +41,86 @@ class ApiService {
     );
 
     print('Empresa uri: $uri');
+    try {
+      final response = await _client
+          .get(
+            uri,
+            headers: {
+              'accept': 'application/json',
+              'empresa': empresa.toString(),
+              'Authorization': apiToken,
+              'dataDigitacaoInicio': dataDigitacaoInicio,
+              'dataDigitacaoFim': dataDigitacaoFim,
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+      print('STATUS PEDIDOS: ${response.statusCode}');
+      print('BODY PEDIDOS: ${response.body}');
 
-    final response = await _client
-        .get(
-          uri,
-          headers: {
-            'accept': 'application/json',
-            'empresa': empresa.toString(),
-            'Authorization': apiToken,
-            'dataDigitacaoInicio': dataDigitacaoInicio,
-            'dataDigitacaoFim': dataDigitacaoFim,
-          },
-        )
-        .timeout(const Duration(seconds: 10));
-    print('STATUS: ${response.statusCode}');
-    print('BODY: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      return PaginatedResponsePedido.fromJson(jsonData, PedidoModel.fromJson);
-    } else {
-      throw Exception(
-        'Erro tabela de preços: ${response.statusCode} - ${response.body}',
-      );
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        return PaginatedResponsePedido.fromJson(jsonData, PedidoModel.fromJson);
+      } else {
+        throw Exception(
+          'Erro tabela de preços: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } on TimeoutException {
+      throw Exception('Servidor não respondeu a tempo. Verifique sua conexão.');
+    } on SocketException {
+      throw Exception('Sem conexão com a internet.');
+    } catch (e) {
+      throw Exception('Erro inesperado: $e');
     }
   }
 
   Future<PaginatedResponseClientes<ClientesModel>> getClientes(
     int empresa, {
     String? continuationToken,
-    int paginacao = 1200,
+    int paginacao = 1165,
+    int situacao = 1,
   }) async {
-    final uri = Uri.parse('$_baseUrl/cliente').replace(
+    final uri = Uri.parse('$_baseUrlClientes/cliente').replace(
       queryParameters: {
+        'situacao': situacao.toString(),
         'paginacao': paginacao.toString(),
         if (continuationToken != null && continuationToken.isNotEmpty)
           'continuationToken': continuationToken,
       },
     );
 
-    final response = await _client
-        .get(
-          uri,
-          headers: {
-            'accept': 'application/json',
-            'empresa': empresa.toString(),
-            'Authorization': apiToken,
-          },
-        )
-        .timeout(const Duration(seconds: 10));
+    debugPrint('Cliente uri: $uri');
+    try {
+      final response = await _client
+          .get(
+            uri,
+            headers: {
+              'accept': 'application/json',
+              'empresa': empresa.toString(),
+              'Authorization': 'Bearer $apiToken',
+              // 'situacao': situacao.toString(),
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+      print('Testando conexão com $_baseUrl...');
+      print('STATUS CLIENTES: ${response.statusCode}');
+      print('BODY CLIENTES: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      return PaginatedResponseClientes.fromJson(
-        jsonData,
-        ClientesModel.fromJson,
-      );
-    } else {
-      throw Exception('Erro: ${response.statusCode} - ${response.body}');
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        return PaginatedResponseClientes.fromJson(
+          jsonData,
+          ClientesModel.fromJson,
+        );
+      } else {
+        throw Exception('Erro: ${response.statusCode} - ${response.body}');
+      }
+    } on TimeoutException {
+      throw Exception('Servidor não respondeu a tempo. Verifique sua conexão.');
+    } on SocketException {
+      throw Exception('Sem conexão com a internet.');
+    } catch (e) {
+      throw Exception('Erro inesperado: $e');
     }
   }
 
@@ -152,7 +177,6 @@ class ApiService {
 
     throw Exception('Erro romaneio: ${response.statusCode} - ${response.body}');
   }
-
 
   void dispose() {
     _client.close();

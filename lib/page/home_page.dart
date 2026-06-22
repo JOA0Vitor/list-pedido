@@ -6,6 +6,7 @@ import 'package:pedidosdp/page/list_pedidos.dart';
 import 'package:pedidosdp/page/romaneio_page.dart';
 import 'package:pedidosdp/service/api_service.dart';
 import 'package:pedidosdp/widgets/formatData.dart';
+import 'package:pedidosdp/widgets/formatDataApi.dart';
 import 'package:pedidosdp/widgets/info_pedido.dart';
 import 'package:pedidosdp/widgets/status_etapa.dart';
 
@@ -28,11 +29,41 @@ class _HomePageState extends State<HomePage> {
   List<ClientesModel> _filtrados = [];
   bool _isLoading = true;
   final _searchController = TextEditingController();
+  List<PedidoModel> _todosPedidos = [];
+  Map<int, String> _nomesClientes = {};
+  PedidoModel? _pedidoSelecionado;
+  final _dataInicialController = TextEditingController();
+  final _dataFinalController = TextEditingController();
+  // List<PedidoModel> _pedidosFiltrados = [];
+  List<PedidoModel> get _pedidosFiltrados {
+    final termo = _searchController.text.toLowerCase();
+    if (termo.isEmpty) return _todosPedidos;
+    return _todosPedidos.where((p) {
+      final nome = (_nomesClientes[p.codCliente] ?? '').toLowerCase();
+      return p.codPedido.toLowerCase().contains(termo) || nome.contains(termo);
+    }).toList();
+  }
+
+  final List<String> _operadores = [
+    'Operador 1',
+    'Operador 2',
+    'Operador 3',
+    'Operador 4',
+    'Operador 5',
+  ];
+
+  String? _operadorSelecionado;
+
+  late Future<List<dynamic>> _futureDados;
 
   Future<void> _autenticar() async {
     if (FirebaseAuth.instance.currentUser == null) {
       await FirebaseAuth.instance.signInAnonymously();
     }
+  }
+
+  void _filtrar() {
+    setState(() {});
   }
 
   Future<void> _fetchClientes() async {
@@ -53,28 +84,70 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // final _formatDataApi = FormatDataApi();
+
+  String _formatarHojeParaApi() {
+    final hoje = DateTime.now();
+    return '${hoje.year}-${hoje.month.toString().padLeft(2, '0')}-${hoje.day.toString().padLeft(2, '0')}';
+  }
+
+  String _converterBrParaApi(String dataBr) {
+    final partes = dataBr.split('/'); // [dd, MM, yyyy]
+    return '${partes[2]}-${partes[1]}-${partes[0]}';
+  }
+
+  String _formatarHojeParaExibir() {
+    final hoje = DateTime.now();
+    return '${hoje.day.toString().padLeft(2, '0')}/${hoje.month.toString().padLeft(2, '0')}/${hoje.year}';
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_emptyFocus);
     });
-    _autenticar();
-    _fetchClientes();
+
     apiService = ApiService(
       apiToken:
           'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5Mzc2MTQzMjgsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6Ik1WbkpKaGdGIiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.9s0aPo2hlN2xIVdc7pnazlUfU8t3m6C_864XHkv2XNQhU6lpE7vYCSyWb9Vf7lHvUTTEPsSdqwm5hBadArJYFQ',
     );
-    _futurePedidos = apiService.getListPedidos(
-      2, // empresa
-      '2026-06-19',
-      '2026-06-19',
-    );
+
+    final hoje = _formatarHojeParaExibir();
+    _dataInicialController.text = hoje;
+    _dataFinalController.text = hoje;
+
+    _buscarPedidos();
+
+    _searchController.addListener(() => setState(() {}));
+    _autenticar();
+    _fetchClientes();
+  }
+
+  void _buscarPedidos() {
+    final dataInicialApi = _dataInicialController.text.isEmpty
+        ? _formatarHojeParaApi()
+        : _converterBrParaApi(_dataInicialController.text);
+
+    final dataFinalApi = _dataFinalController.text.isEmpty
+        ? _formatarHojeParaApi()
+        : _converterBrParaApi(_dataFinalController.text);
+
+    print('_buscarPedidos dataInicialApi: $dataInicialApi');
+    print('_buscarPedidos dataFinalApi: $dataFinalApi');
+    setState(() {
+      _futureDados = Future.wait([
+        apiService.getListPedidos(2, dataInicialApi, dataFinalApi),
+        apiService.getClientes(2),
+      ]);
+    });
   }
 
   @override
   void dispose() {
     apiService.dispose();
+    _searchController.removeListener(_filtrar);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -83,140 +156,179 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: Color(0xFFE0E5EB),
+      endDrawerEnableOpenDragGesture: false,
       endDrawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            ListTile(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: _pedidoSelecionado == null
+            ? const Center(child: Text('Nenhum pedido selecionado'))
+            : ListView(
+                padding: EdgeInsets.zero,
                 children: [
-                  Text(
-                    'Detalhes do Pedido',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  ListTile(
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Detalhes do Pedido',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // const Spacer(),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
                     ),
                   ),
-                  // const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              onTap: () {
-                Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (context) => HomePage()));
-              },
-            ),
-            ListTile(
-              title: InfoColumn(
-                label: 'N° Pedido',
-                value: 'pedido.codPedido',
-                valueStyle: const TextStyle(
-                  color: Color(0xFF0043AC),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-            ),
-            ListTile(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  InfoColumn(
-                    label: 'DATA',
-                    value: formatarData('2026-06-19'),
-                    valueStyle: const TextStyle(
-                      color: Color(0xFF0B1628),
-                      fontWeight: FontWeight.w300,
-                      fontSize: 16,
-                    ),
-                  ),
-                  InfoColumn(
-                    label: 'Checkout',
-                    value: 'Em processo',
-                    valueStyle: const TextStyle(
-                      color: Color(0xFF0B1628),
-                      fontWeight: FontWeight.w300,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              title: InfoColumn(
-                label: 'CLIENTE',
-                value: 'pedido.codCliente',
-                valueStyle: const TextStyle(
-                  color: Color(0xFF0B1628),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            ListTile(
-              title: Expanded(
-                flex: 5,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Etapa',
-                      style: const TextStyle(
-                        color: Color(0xFF677383),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
+                  ListTile(
+                    title: InfoColumn(
+                      label: 'N° Pedido',
+                      value: _pedidoSelecionado!.codPedido,
+                      valueStyle: const TextStyle(
+                        color: Color(0xFF0043AC),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
                       ),
                     ),
-                    EtapaColumn(
-                      color: Color(0xFFFE8D00),
-                      // color: pedido.codEtapa == 3
-                      //     ? Color(0xFFFE8D00)
-                      //     : pedido.codEtapa == 4
-                      //     ? Color(0xFF4CAF50)
-                      //     : pedido.codEtapa == 5
-                      //     ? Color(0xFF677383)
-                      //     : pedido.codEtapa == 9
-                      //     ? Color(0xFF9E9E9E)
-                      //     : Color(0xFF2196F3),
-                      codEtapa: 4,
-                      // codEtapa: pedido.codEtapa,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            ListTile(
-              title: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          RomaneioPage(codPedido: 'pedido.codPedido'),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF0043AC),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-                child: const Text(
-                  'Acompanhar Pedido',
-                  style: TextStyle(color: Color(0xFFFFFFFF)),
-                ),
+                  ListTile(
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InfoColumn(
+                          label: 'DATA',
+                          value: formatarData(_pedidoSelecionado!.dataEmissao),
+                          valueStyle: const TextStyle(
+                            color: Color(0xFF0B1628),
+                            fontWeight: FontWeight.w300,
+                            fontSize: 16,
+                          ),
+                        ),
+                        InfoColumn(
+                          label: 'Checkout',
+                          value: _pedidoSelecionado!.codEtapa == 4
+                              ? 'Em processo'
+                              : '',
+                          valueStyle: const TextStyle(
+                            color: Color(0xFF0B1628),
+                            fontWeight: FontWeight.w300,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ListTile(
+                    title: InfoColumn(
+                      label: 'CLIENTE',
+                      value:
+                          _nomesClientes[_pedidoSelecionado!.codCliente] ?? '',
+                      valueStyle: const TextStyle(
+                        color: Color(0xFF0B1628),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Expanded(
+                      flex: 5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Etapa',
+                            style: const TextStyle(
+                              color: Color(0xFF677383),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                          EtapaColumn(
+                            color: PedidoModel.corPorEtapa(
+                              _pedidoSelecionado!.codEtapa,
+                            ),
+                            codEtapa: _pedidoSelecionado!.codEtapa,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_pedidoSelecionado!.codEtapa == 4)
+                    Column(
+                      children: [
+                        ListTile(
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'OPERADOR',
+                                style: TextStyle(
+                                  color: Color(0xFF677383),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              DropdownButtonFormField<String>(
+                                value: _operadorSelecionado,
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  hintText: 'Selecione o operador',
+                                ),
+                                items: _operadores
+                                    .map(
+                                      (op) => DropdownMenuItem(
+                                        value: op,
+                                        child: Text(op),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (valor) {
+                                  setState(() => _operadorSelecionado = valor);
+                                  // futuramente: lockService.travar(_pedidoSelecionado!.codPedido, valor!);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                  ListTile(
+                    title: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RomaneioPage(
+                              codPedido: _pedidoSelecionado!.codPedido,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF0043AC),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Acompanhar Pedido',
+                        style: TextStyle(color: Color(0xFFFFFFFF)),
+                      ),
+                    ),
+                  ),
+                      ],
+                    ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
       appBar: AppBar(
         backgroundColor: Color(0xFFF7FBFD),
@@ -243,14 +355,10 @@ class _HomePageState extends State<HomePage> {
             //               builder: (context) => HomePage(),
             //             ),
             //           );
-            _futurePedidos = apiService.getListPedidos(
-              2, // empresa
-              '2026-06-19',
-              '2026-06-19',
-            );
+            _buscarPedidos();
           },
-          child: FutureBuilder<PaginatedResponsePedido<PedidoModel>>(
-            future: _futurePedidos,
+          child: FutureBuilder<List<dynamic>>(
+            future: _futureDados,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -258,44 +366,214 @@ class _HomePageState extends State<HomePage> {
               if (snapshot.hasError) {
                 return Center(child: Text('Erro: ${snapshot.error}'));
               }
-              final pedidos = snapshot.data!.data;
+              if (snapshot.data![0].data.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Nenhum pedido',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      ElevatedButton(
+                        //verificar esse botão
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  PopScope(canPop: false, child: HomePage()),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(108, 55),
+                          backgroundColor: const Color(0xFF0043AC),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Voltar',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final pedidosResponse =
+                  snapshot.data![0] as PaginatedResponsePedido<PedidoModel>;
+              final clientesResponse =
+                  snapshot.data![1] as PaginatedResponseClientes<ClientesModel>;
+
+              _todosPedidos = pedidosResponse.data;
+              _nomesClientes = {
+                for (final c in clientesResponse.data)
+                  c.codCliente.toInt(): c.nome,
+              };
+
               return Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Text(pedidos.length.toString()),
                     Container(
-                      height: 80,
+                      height: 150,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: TextFormField(
-                          controller: _searchController,
-                          autofocus: true,
-                          decoration: InputDecoration(
-                            hintText: 'Buscar cliente...',
-                            prefixIcon: const Icon(Icons.search),
-                            suffixIcon: _searchController.text.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () => _searchController.clear(),
-                                  )
-                                : null,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: TextFormField(
+                                  controller: _searchController,
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    hintText: 'Buscar cliente...',
+                                    prefixIcon: const Icon(Icons.search),
+                                    suffixIcon:
+                                        _searchController.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear),
+                                            onPressed: () =>
+                                                _searchController.clear(),
+                                          )
+                                        : null,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              InfoColumn(
+                                label: 'Total de Pedidos',
+                                value: _pedidosFiltrados.length.toString(),
+                                valueStyle: const TextStyle(
+                                  color: Color(0xFF0043AC),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: TextFormField(
+                                  controller: _dataInicialController,
+                                  readOnly: true,
+                                  decoration: InputDecoration(
+                                    hintText: 'Data inicial',
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.calendar_month),
+                                      onPressed: () async {
+                                        DateTime? dataSelecionada =
+                                            await showDatePicker(
+                                              context: context,
+                                              initialDate: DateTime.now(),
+                                              firstDate: DateTime(2000),
+                                              lastDate: DateTime(2100),
+                                            );
+
+                                        if (dataSelecionada != null) {
+                                          _dataInicialController.text =
+                                              "${dataSelecionada.day.toString().padLeft(2, '0')}/"
+                                              "${dataSelecionada.month.toString().padLeft(2, '0')}/"
+                                              "${dataSelecionada.year}";
+                                        }
+                                      },
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 3,
+                                child: TextFormField(
+                                  controller: _dataFinalController,
+                                  readOnly: true,
+                                  decoration: InputDecoration(
+                                    hintText: 'Data final',
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.calendar_month),
+                                      onPressed: () async {
+                                        DateTime? dataSelecionada =
+                                            await showDatePicker(
+                                              context: context,
+                                              initialDate: DateTime.now(),
+                                              firstDate: DateTime(2000),
+                                              lastDate: DateTime(2100),
+                                            );
+
+                                        if (dataSelecionada != null) {
+                                          _dataFinalController.text =
+                                              "${dataSelecionada.day.toString().padLeft(2, '0')}/"
+                                              "${dataSelecionada.month.toString().padLeft(2, '0')}/"
+                                              "${dataSelecionada.year}";
+                                        }
+                                      },
+                                    ),
+
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              ElevatedButton(
+                                onPressed: _buscarPedidos,
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: Size(108, 55),
+                                  backgroundColor: const Color(0xFF0043AC),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Filtrar',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(height: 10),
                     Expanded(
                       child: PedidosScreen(
-                        pedidos: pedidos,
-                        onAbrirDrawer: () => scaffoldKey.currentState?.openEndDrawer(),
+                        // pedidos: pedidosResponse.data,
+                        // pedidos: _todosPedidos,
+                        pedidos: _pedidosFiltrados,
+                        nomesClientes: _nomesClientes,
+                        onPedidoTap: (pedido) {
+                          setState(() {
+                            _pedidoSelecionado = pedido;
+                            _operadorSelecionado = null;
+                          });
+                          scaffoldKey.currentState?.openEndDrawer();
+                        },
                       ),
                     ),
                   ],

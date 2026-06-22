@@ -4,12 +4,15 @@ import 'package:pedidosdp/page/pedido_card.dart';
 
 class PedidosScreen extends StatelessWidget {
   final List<PedidoModel> pedidos;
-  final VoidCallback onAbrirDrawer;
+  final Map<int, String> nomesClientes;
+    final void Function(PedidoModel pedido) onPedidoTap;
+
 
   const PedidosScreen({
     super.key,
     required this.pedidos,
-    required this.onAbrirDrawer,
+    required this.nomesClientes,
+    required this.onPedidoTap,
   });
 
   @override
@@ -24,9 +27,10 @@ class PedidosScreen extends StatelessWidget {
         final pedido = pedidosOrdenados[index];
         return PedidoCard(
           pedido: pedido,
+          nomeCliente: nomesClientes[pedido.codCliente] ?? 'Cliente ${pedido.codCliente}',
           onTap: () async {
             print('tocou');
-            onAbrirDrawer();
+            onPedidoTap(pedido);
             // Navigator.push(
             //   context,
             //   MaterialPageRoute(
