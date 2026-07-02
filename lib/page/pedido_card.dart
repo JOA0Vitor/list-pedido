@@ -21,7 +21,6 @@ class PedidoCard extends StatelessWidget {
     return partes.take(1).join(' ');
   }
 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -59,7 +58,10 @@ class PedidoCard extends StatelessWidget {
             InfoColumn(
               label: 'CLIENTE',
               // value: pedido.codCliente.toString(),
-              value: _primeirosDoisNomes(nomeCliente),
+              // value: '',
+              value: nomeCliente == ''
+                  ? _primeirosDoisNomes(nomeCliente)
+                  : 'Ver mais',
               valueStyle: const TextStyle(
                 color: Color(0xFF0B1628),
                 fontWeight: FontWeight.bold,

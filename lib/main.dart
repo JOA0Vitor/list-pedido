@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pedidosdp/page/home_page.dart';
+import 'package:pedidosdp/service/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,7 +11,9 @@ void main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
+    // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+   NotificationService();
   runApp(const MyApp());
 }
 

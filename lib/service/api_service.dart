@@ -77,7 +77,8 @@ class ApiService {
   Future<PaginatedResponseClientes<ClientesModel>> getClientes(
     int empresa, {
     String? continuationToken,
-    int paginacao = 1165,
+    // int paginacao = 1165,// Preciso achar uma solução para isso, ta demorando muito para pegar os dados
+    int paginacao = 165,
     int situacao = 1,
   }) async {
     final uri = Uri.parse('$_baseUrlClientes/cliente').replace(
@@ -113,7 +114,7 @@ class ApiService {
           ClientesModel.fromJson,
         );
       } else {
-        throw Exception('Erro: ${response.statusCode} - ${response.body}');
+        throw Exception('Erro API: ${response.statusCode} - ${response.body}');
       }
     } on TimeoutException {
       throw Exception('Servidor não respondeu a tempo. Verifique sua conexão.');
