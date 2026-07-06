@@ -53,11 +53,15 @@ class _HomePageState extends State<HomePage> {
   Set<String> _codPedidosConhecidos = {};
 
   final List<String> _operadores = [
-    'Operador 1',
-    'Operador 2',
-    'Operador 3',
-    'Operador 4',
-    'Operador 5',
+    'Gledson',
+    'Damião',
+    'Tarcicleiton',
+    'Thiago',
+    'Bruno',
+    'Douglas',
+    'Guilherme',
+    'Júnior',
+    'Leandro',
   ];
 
   String? _operadorSelecionado;
@@ -200,7 +204,9 @@ class _HomePageState extends State<HomePage> {
       if (chegaram.isNotEmpty) {
         _codPedidosConhecidos = codsPedidosNovos;
         debugPrint('NOVO PEDIDO — disparando som');
-        await NotificationService.tocarAlerta();
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await NotificationService.tocarAlerta();
+        });
         _buscarPedidos();
       }
     } catch (e) {
@@ -305,7 +311,7 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                  ListTile(
+                  ListTile(//erro no realese
                     title: InfoColumn(
                       label: 'CLIENTE',
                       value:
@@ -318,27 +324,31 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   ListTile(
-                    title: Expanded(
-                      flex: 5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Etapa',
-                            style: const TextStyle(
-                              color: Color(0xFF677383),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Etapa',
+                                style: const TextStyle(
+                                  color: Color(0xFF677383),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              EtapaColumn(
+                                color: PedidoModel.corPorEtapa(
+                                  _pedidoSelecionado!.codEtapa,
+                                ),
+                                codEtapa: _pedidoSelecionado!.codEtapa,
+                              ),
+                            ],
                           ),
-                          EtapaColumn(
-                            color: PedidoModel.corPorEtapa(
-                              _pedidoSelecionado!.codEtapa,
-                            ),
-                            codEtapa: _pedidoSelecionado!.codEtapa,
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   if (_pedidoSelecionado!.codEtapa == 4)
@@ -436,7 +446,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           children: [
             ElevatedButton(
-              onPressed: () =>  NotificationService.tocarAlerta() ,
+              onPressed: () => NotificationService.tocarAlerta(),
               child: const Text('Testar notificação'),
             ),
             Container(
@@ -621,16 +631,19 @@ class _HomePageState extends State<HomePage> {
                       );
                     }
 
-                    return PedidosScreen(
-                      pedidos: _pedidosFiltrados,
-                      nomesClientes: _nomesClientes,
-                      onPedidoTap: (pedido) {
-                        setState(() {
-                          _pedidoSelecionado = pedido;
-                          _operadorSelecionado = null;
-                        });
-                        scaffoldKey.currentState?.openEndDrawer();
-                      },
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: PedidosScreen(
+                        pedidos: _pedidosFiltrados,
+                        nomesClientes: _nomesClientes,
+                        onPedidoTap: (pedido) {
+                          setState(() {
+                            _pedidoSelecionado = pedido;
+                            _operadorSelecionado = null;
+                          });
+                          scaffoldKey.currentState?.openEndDrawer();
+                        },
+                      ),
                     );
                   },
                 ),
