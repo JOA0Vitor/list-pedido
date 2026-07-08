@@ -56,7 +56,6 @@ class _HomePageState extends State<HomePage> {
     'Gledson',
     'Damião',
     'Tarcicleiton',
-    'Thiago',
     'Bruno',
     'Douglas',
     'Guilherme',
@@ -311,7 +310,8 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                  ListTile(//erro no realese
+                  ListTile(
+                    //erro no realese
                     title: InfoColumn(
                       label: 'CLIENTE',
                       value:
@@ -396,6 +396,7 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                         ),
+                        
                         ListTile(
                           title: ElevatedButton(
                             onPressed: () {
@@ -418,6 +419,12 @@ class _HomePageState extends State<HomePage> {
                               'Acompanhar Pedido',
                               style: TextStyle(color: Color(0xFFFFFFFF)),
                             ),
+                          ),
+                        ),
+                        ListTile(
+                          title: Text(
+                            'Colocar uma condição no botao',
+                            style: TextStyle(color: Colors.black),
                           ),
                         ),
                       ],

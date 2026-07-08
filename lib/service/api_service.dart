@@ -11,6 +11,7 @@ class ApiService {
   static const String _baseUrl = 'https://187.85.164.196/api/comercial/v10';
   static const String _baseUrlClientes =
       'https://187.85.164.196/api/cadastrosgerais/v10';
+  static const String _baseUrlRomaneio = 'http://192.168.0.36:8000/pedidos';
   final int empresa = 2;
 
   final String apiToken;
@@ -131,6 +132,7 @@ class ApiService {
     String? dataEmissaoFim,
     List<int>? situacoes,
     String? continuationToken,
+    int numeroPedidos = 371,
   }) async {
     final queryParams = <String, String>{};
 
@@ -157,6 +159,11 @@ class ApiService {
     final uri = Uri.parse(
       '$_baseUrl/romaneioTextil',
     ).replace(queryParameters: queryParams.isEmpty ? null : queryParams);
+
+    final responseRomaneio = await _client.get(
+      Uri.parse('$_baseUrlRomaneio/$numeroPedidos/itens?cod_empresa=$empresa'),
+      headers: {'X-API-Key': 'sua-chave-aqui'},
+    );
 
     debugPrint('Romaneio uri: $uri');
 
