@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:pedidosdp/page/home_page.dart';
 
 import '../service/api_service.dart';
@@ -14,16 +15,20 @@ class RomaneioPage extends StatefulWidget {
 
 class _RomaneioPageState extends State<RomaneioPage> {
   late final ApiService _api;
-  late Future<dynamic> _futureRomaneio;
+  late Future<PaginatedResponseRomaneio<RomaneioModel>> _futureRomaneio;
 
   @override
   void initState() {
     super.initState();
     _api = ApiService(
       apiToken:
-          'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5Mzc2MTQzMjgsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6Ik1WbkpKaGdGIiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.9s0aPo2hlN2xIVdc7pnazlUfU8t3m6C_864XHkv2XNQhU6lpE7vYCSyWb9Vf7lHvUTTEPsSdqwm5hBadArJYFQ',
+          'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
     );
-    _futureRomaneio = _api.getRomaneioTextil();
+    _futureRomaneio = _api.getRomaneio(
+      2,
+      widget.codPedido,
+      'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
+    );
   }
 
   @override
@@ -39,7 +44,17 @@ class _RomaneioPageState extends State<RomaneioPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Romaneio'),
+        title: Row(
+          children: [
+            Text(
+              'Romaneio',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            Text('Pedido ${widget.codPedido}'),
+            const Spacer(),
+          ],
+        ),
         actions: [
           ElevatedButton(
             onPressed: () {
@@ -61,8 +76,9 @@ class _RomaneioPageState extends State<RomaneioPage> {
           ),
         ],
       ),
-      body: FutureBuilder<dynamic>(
+      body: FutureBuilder<PaginatedResponseRomaneio<RomaneioModel>>(
         future: _futureRomaneio,
+
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -70,8 +86,28 @@ class _RomaneioPageState extends State<RomaneioPage> {
           // if (snapshot.hasError) {
           //   return Center(child: Text('Erro ROMANEIO: ${snapshot.error}'));
           // }
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Erro: ${snapshot.error}'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Tentar novamente'),
+                  ),
+                ],
+              ),
+            );
+          }
 
-          final data = snapshot.data;
+          final itens = snapshot.data?.itens ?? [];
+
+          if (itens.isEmpty) {
+            return const Center(child: Text('Nenhum item encontrado.'));
+          }
+
           return Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -114,17 +150,16 @@ class _RomaneioPageState extends State<RomaneioPage> {
                       ],
                     ),
                   ),
-                  // Divider
                   Container(height: 2, color: Color(0xFFDEE2E6)),
-                  // Rows
                   Expanded(
                     child: ListView.separated(
-                      itemCount: 15,
+                      itemCount: itens.length,
                       separatorBuilder: (_, __) =>
                           Container(height: 1, color: _borderColor),
                       itemBuilder: (context, index) {
-                        // final item = itens[index];
+                        final item = itens[index];
                         final isEven = index % 2 == 0;
+                        final quantidadeDividida = item.qtdPedida / 15;
                         return Container(
                           color: isEven
                               ? Colors.white
@@ -132,34 +167,31 @@ class _RomaneioPageState extends State<RomaneioPage> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           child: Row(
                             children: [
-                              _dataCell(
-                                '624619.0001417',
+                              _dataCellCor(
+                                '${item.codProdutoPai}.','${item.codCor}',
                                 flex: 2,
                                 isCode: true,
                               ),
                               _verticalDividerRow(),
-                              _dataCell(
-                                'MALHA MAXI d, c/ acess. ecv enigmatic mr es 2.2fh',
-                                flex: 6,
-                              ),
+                              _dataCell(item.descProdutoGen, flex: 6),
                               _verticalDividerRow(),
                               _verticalDividerRow(),
                               _dataCell(
-                                '988-EXPOS/F.51.1/F.47.1',
+                                item.localNatureza ?? '—',
                                 flex: 3,
                                 center: true,
                                 bold: true,
                               ),
                               _verticalDividerRow(),
-                              _dataCell(
-                                '10' ?? '—',
+                              _dataCellPecas(
+                                quantidadeDividida.toStringAsFixed(0),
                                 flex: 2,
                                 center: true,
-                                muted: 'item.localNatureza' == null,
+                                muted: item.localNatureza == null,
                               ),
                               _verticalDividerRow(),
                               _dataCell(
-                                '150.000',
+                                '${item.qtdPedida.toStringAsFixed(1)}KG',
                                 flex: 2,
                                 right: true,
                                 bold: true,
@@ -242,6 +274,89 @@ class _RomaneioPageState extends State<RomaneioPage> {
             fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
             color: muted ? const Color(0xFFADB5BD) : const Color(0xFF212529),
           ),
+        ),
+      ),
+    );
+  }
+  Widget _dataCellPecas(
+    String text, {
+    required int flex,
+    bool center = false,
+    bool right = false,
+    bool isCode = false,
+    bool bold = false,
+    bool muted = false,
+  }) {
+    return Expanded(
+      flex: flex,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(
+          text,
+          textAlign: center
+              ? TextAlign.center
+              : right
+              ? TextAlign.right
+              : TextAlign.left,
+          style: TextStyle(
+            fontSize: 15,
+            fontFamily: isCode ? 'monospace' : null,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0043AC),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dataCellCor(
+    String textRef,String textCor,{
+    required int flex,
+    bool center = false,
+    bool right = false,
+    bool isCode = false,
+    bool bold = false,
+    bool muted = false,
+  }) {
+    return Expanded(
+      flex: flex,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Column(
+          children: [
+            Text(
+              textRef,
+              textAlign: center
+                  ? TextAlign.center
+                  : right
+                  ? TextAlign.right
+                  : TextAlign.left,
+              style: TextStyle(
+                fontSize: isCode ? 12 : 13,
+                fontFamily: isCode ? 'monospace' : null,
+                fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
+                color: muted
+                    ? const Color(0xFFADB5BD)
+                    : const Color(0xFF212529),
+              ),
+            ),
+            Text(
+              textCor,
+              textAlign: center
+                  ? TextAlign.center
+                  : right
+                  ? TextAlign.right
+                  : TextAlign.left,
+              style: TextStyle(
+                fontSize: 15,
+                fontFamily: isCode ? 'monospace' : null,
+                fontWeight: bold ? FontWeight.w600 : FontWeight.bold,
+                color: muted
+                    ? const Color(0xFFADB5BD)
+                    : const Color(0xFF212529),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -6,12 +6,13 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:pedidosdp/models/clientes_model.dart';
 import 'package:pedidosdp/models/pedidos_model.dart';
+import 'package:pedidosdp/models/romaneio_model.dart';
 
 class ApiService {
   static const String _baseUrl = 'https://187.85.164.196/api/comercial/v10';
   static const String _baseUrlClientes =
       'https://187.85.164.196/api/cadastrosgerais/v10';
-  static const String _baseUrlRomaneio = 'http://192.168.0.36:8000/pedidos';
+  static const String _baseUrlRomaneio = 'http://192.168.0.36:8000';
   final int empresa = 2;
 
   final String apiToken;
@@ -126,65 +127,112 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getRomaneioTextil({
-    List<String>? pedidos,
-    String? dataEmissaoInicio,
-    String? dataEmissaoFim,
-    List<int>? situacoes,
-    String? continuationToken,
-    int numeroPedidos = 371,
-  }) async {
-    final queryParams = <String, String>{};
+  Future<PaginatedResponseRomaneio<RomaneioModel>> getRomaneio(
+  int empresa,
+  String codPedido,
+  String token,
+) async {
+  final uri = Uri.parse(
+    '$_baseUrlRomaneio/pedidos/$codPedido/itens-detalhados',
+  ).replace(
+    queryParameters: {'cod_empresa': empresa.toString()},
+  );
 
-    if (continuationToken != null && continuationToken.isNotEmpty) {
-      queryParams['continuationToken'] = continuationToken;
-    }
-    if (dataEmissaoInicio != null && dataEmissaoInicio.isNotEmpty) {
-      queryParams['dataEmissaoInicio'] = dataEmissaoInicio;
-    }
-    if (dataEmissaoFim != null && dataEmissaoFim.isNotEmpty) {
-      queryParams['dataEmissaoFim'] = dataEmissaoFim;
-    }
-    if (pedidos != null && pedidos.isNotEmpty) {
-      for (final p in pedidos) {
-        queryParams.putIfAbsent('pedido', () => p);
-      }
-    }
-    if (situacoes != null && situacoes.isNotEmpty) {
-      for (final s in situacoes) {
-        queryParams.putIfAbsent('situacao', () => s.toString());
-      }
-    }
+  debugPrint('Romaneio uri: $uri');
 
-    final uri = Uri.parse(
-      '$_baseUrl/romaneioTextil',
-    ).replace(queryParameters: queryParams.isEmpty ? null : queryParams);
+  try {
+    final response = await _client
+        .get(
+          uri,
+          headers: {
+            'accept': 'application/json',
+            'x-api-key': token,
+          },
+        )
+        .timeout(const Duration(seconds: 10));
 
-    final responseRomaneio = await _client.get(
-      Uri.parse('$_baseUrlRomaneio/$numeroPedidos/itens?cod_empresa=$empresa'),
-      headers: {'X-API-Key': 'sua-chave-aqui'},
-    );
-
-    debugPrint('Romaneio uri: $uri');
-
-    final response = await _client.get(
-      uri,
-      headers: {
-        'accept': 'application/json',
-        'empresa': empresa.toString(),
-        'Authorization': apiToken,
-      },
-    );
-
-    debugPrint('STATUS: ${response.statusCode}');
-    debugPrint('BODY: ${response.body}');
+    print('STATUS ROMANEIO: ${response.statusCode}');
+    print('BODY ROMANEIO: ${response.body}');
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      final jsonData = jsonDecode(response.body);
+      return PaginatedResponseRomaneio.fromJson(
+        jsonData,
+        RomaneioModel.fromJson,
+      );
+    } else {
+      throw Exception(
+        'Erro tabela de preços: ${response.statusCode} - ${response.body}',
+      );
     }
-
-    throw Exception('Erro romaneio: ${response.statusCode} - ${response.body}');
+  } on TimeoutException {
+    throw Exception('Servidor não respondeu a tempo. Verifique sua conexão.');
+  } on SocketException {
+    throw Exception('Sem conexão com a internet.');
+  } catch (e) {
+    throw Exception('Erro inesperado: $e');
   }
+}
+
+  // Future<Map<String, dynamic>> getRomaneioTextil({
+  //   List<String>? pedidos,
+  //   String? dataEmissaoInicio,
+  //   String? dataEmissaoFim,
+  //   List<int>? situacoes,
+  //   String? continuationToken,
+  //   int numeroPedidos = 371,
+  // }) async {
+  //   final queryParams = <String, String>{};
+
+  //   if (continuationToken != null && continuationToken.isNotEmpty) {
+  //     queryParams['continuationToken'] = continuationToken;
+  //   }
+  //   if (dataEmissaoInicio != null && dataEmissaoInicio.isNotEmpty) {
+  //     queryParams['dataEmissaoInicio'] = dataEmissaoInicio;
+  //   }
+  //   if (dataEmissaoFim != null && dataEmissaoFim.isNotEmpty) {
+  //     queryParams['dataEmissaoFim'] = dataEmissaoFim;
+  //   }
+  //   if (pedidos != null && pedidos.isNotEmpty) {
+  //     for (final p in pedidos) {
+  //       queryParams.putIfAbsent('pedido', () => p);
+  //     }
+  //   }
+  //   if (situacoes != null && situacoes.isNotEmpty) {
+  //     for (final s in situacoes) {
+  //       queryParams.putIfAbsent('situacao', () => s.toString());
+  //     }
+  //   }
+
+  //   final uri = Uri.parse(
+  //     '$_baseUrl/romaneioTextil',
+  //   ).replace(queryParameters: queryParams.isEmpty ? null : queryParams);
+
+  //   final responseRomaneio = await _client.get(
+  //     Uri.parse('$_baseUrlRomaneio/$numeroPedidos/itens?cod_empresa=$empresa'),
+  //     headers: {'X-API-Key': 'sua-chave-aqui'},
+  //   );
+
+  //   debugPrint('Romaneio uri: $uri');
+
+  //   final response = await _client.get(
+  //     uri,
+  //     headers: {
+  //       'accept': 'application/json',
+  //       'empresa': empresa.toString(),
+  //       'Authorization': apiToken,
+  //     },
+  //   );
+
+  //   debugPrint('STATUS: ${response.statusCode}');
+  //   debugPrint('BODY: ${response.body}');
+
+  //   if (response.statusCode == 200) {
+  //     return jsonDecode(response.body) as Map<String, dynamic>;
+  //   }
+
+  //   throw Exception('Erro romaneio: ${response.statusCode} - ${response.body}');
+  // }
 
   void dispose() {
     _client.close();

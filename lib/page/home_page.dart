@@ -79,7 +79,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchClientes() async {
     try {
-      final result = await apiService.getClientes(1);
+      final result = await apiService.getClientes(2);
       print('Total clientes: ${result.data.length}');
       print(
         'Primeiro: ${result.data.first.nome} - ${result.data.first.codCliente}',
@@ -396,7 +396,7 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                         ),
-                        
+
                         ListTile(
                           title: ElevatedButton(
                             onPressed: () {
@@ -415,8 +415,8 @@ class _HomePageState extends State<HomePage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: const Text(
-                              'Acompanhar Pedido',
+                            child: Text(
+                              'Acompanhar Pedido ${_pedidoSelecionado!.codPedido}',
                               style: TextStyle(color: Color(0xFFFFFFFF)),
                             ),
                           ),
@@ -453,7 +453,17 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           children: [
             ElevatedButton(
-              onPressed: () => NotificationService.tocarAlerta(),
+              onPressed: () {
+                // NotificationService.tocarAlerta();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RomaneioPage(
+                      codPedido: '4481',
+                    ),
+                  ),
+                );
+              },
               child: const Text('Testar notificação'),
             ),
             Container(
