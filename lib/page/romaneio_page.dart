@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:pedidosdp/page/home_page.dart';
+import 'package:pedidosdp/service/whatsapp_service.dart';
 
 import '../service/api_service.dart';
 
@@ -16,6 +17,7 @@ class RomaneioPage extends StatefulWidget {
 class _RomaneioPageState extends State<RomaneioPage> {
   late final ApiService _api;
   late Future<PaginatedResponseRomaneio<RomaneioModel>> _futureRomaneio;
+  final Map<int, bool> _checkedItems = {};
 
   @override
   void initState() {
@@ -40,6 +42,12 @@ class _RomaneioPageState extends State<RomaneioPage> {
   static const Color _borderColor = Color(0xFFDEE2E6);
   static const double _borderWidth = 1.0;
 
+  static const Color _selectedColor = Color(
+    0xFFE3F2FD,
+  ); // Azul claro quando selecionado
+  static const Color _evenColor = Colors.white;
+  static const Color _oddColor = Color(0xFFFAFBFC);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +65,22 @@ class _RomaneioPageState extends State<RomaneioPage> {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              // await finalizarPedido();
+
+              await WhatsAppService.enviarMensagem(
+                telefone: '5581999999999', // Número do destinatário
+                mensagem: 'Pedido ${widget.codPedido} finalizado ✅',
+              );
+
+              // 3. Navega para home
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HomePage()),
+                );
+              }
+
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => HomePage()),
@@ -138,15 +161,16 @@ class _RomaneioPageState extends State<RomaneioPage> {
                         ),
                         _headerCell(
                           'Local WMS',
-                          flex: 5,
+                          flex: 4,
                           align: TextAlign.center,
                         ),
                         _headerCell('Peças', flex: 2, align: TextAlign.center),
                         _headerCell(
                           'Quantidade',
-                          flex: 2,
+                          flex: 3,
                           align: TextAlign.right,
                         ),
+                        const SizedBox(width: 28),
                       ],
                     ),
                   ),
@@ -158,17 +182,23 @@ class _RomaneioPageState extends State<RomaneioPage> {
                           Container(height: 1, color: _borderColor),
                       itemBuilder: (context, index) {
                         final item = itens[index];
-                        final isEven = index % 2 == 0;
+                        // final isEven = index % 2 == 0;
                         final quantidadeDividida = item.qtdPedida / 15;
+
+                        final isChecked = _checkedItems[index] ?? false;
+
+                        final backgroundColor = isChecked
+                            ? const Color.fromARGB(255, 164, 255, 151)
+                            : (index % 2 == 0 ? _evenColor : _oddColor);
+
                         return Container(
-                          color: isEven
-                              ? Colors.white
-                              : const Color(0xFFFAFBFC),
+                          color: backgroundColor,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           child: Row(
                             children: [
                               _dataCellCor(
-                                '${item.codProdutoPai}.','${item.codCor}',
+                                '${item.codProdutoPai}.',
+                                '${item.codCor}',
                                 flex: 2,
                                 isCode: true,
                               ),
@@ -185,9 +215,9 @@ class _RomaneioPageState extends State<RomaneioPage> {
                               _verticalDividerRow(),
                               _dataCellPecas(
                                 quantidadeDividida.toStringAsFixed(0),
-                                flex: 2,
+                                flex: 1,
                                 center: true,
-                                muted: item.localNatureza == null,
+                                // muted: item.localNatureza == null,
                               ),
                               _verticalDividerRow(),
                               _dataCell(
@@ -195,6 +225,15 @@ class _RomaneioPageState extends State<RomaneioPage> {
                                 flex: 2,
                                 right: true,
                                 bold: true,
+                              ),
+                              _verticalDividerRow(),
+                              Checkbox(
+                                value: isChecked,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _checkedItems[index] = value ?? false;
+                                  });
+                                },
                               ),
                             ],
                           ),
@@ -236,13 +275,16 @@ class _RomaneioPageState extends State<RomaneioPage> {
   }) {
     return Expanded(
       flex: flex,
-      child: Text(
-        text,
-        textAlign: align,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF495057),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(
+          text,
+          textAlign: align,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF495057),
+          ),
         ),
       ),
     );
@@ -278,29 +320,17 @@ class _RomaneioPageState extends State<RomaneioPage> {
       ),
     );
   }
-  Widget _dataCellPecas(
-    String text, {
-    required int flex,
-    bool center = false,
-    bool right = false,
-    bool isCode = false,
-    bool bold = false,
-    bool muted = false,
-  }) {
+
+  Widget _dataCellPecas(String text, {required int flex, bool center = false}) {
     return Expanded(
       flex: flex,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Text(
           text,
-          textAlign: center
-              ? TextAlign.center
-              : right
-              ? TextAlign.right
-              : TextAlign.left,
-          style: TextStyle(
+          textAlign: center ? TextAlign.center : TextAlign.left,
+          style: const TextStyle(
             fontSize: 15,
-            fontFamily: isCode ? 'monospace' : null,
             fontWeight: FontWeight.bold,
             color: Color(0xFF0043AC),
           ),
@@ -310,50 +340,32 @@ class _RomaneioPageState extends State<RomaneioPage> {
   }
 
   Widget _dataCellCor(
-    String textRef,String textCor,{
+    String textRef,
+    String textCor, {
     required int flex,
-    bool center = false,
-    bool right = false,
     bool isCode = false,
-    bool bold = false,
-    bool muted = false,
   }) {
     return Expanded(
       flex: flex,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               textRef,
-              textAlign: center
-                  ? TextAlign.center
-                  : right
-                  ? TextAlign.right
-                  : TextAlign.left,
               style: TextStyle(
                 fontSize: isCode ? 12 : 13,
                 fontFamily: isCode ? 'monospace' : null,
-                fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
-                color: muted
-                    ? const Color(0xFFADB5BD)
-                    : const Color(0xFF212529),
+                color: const Color(0xFF212529),
               ),
             ),
             Text(
               textCor,
-              textAlign: center
-                  ? TextAlign.center
-                  : right
-                  ? TextAlign.right
-                  : TextAlign.left,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 15,
-                fontFamily: isCode ? 'monospace' : null,
-                fontWeight: bold ? FontWeight.w600 : FontWeight.bold,
-                color: muted
-                    ? const Color(0xFFADB5BD)
-                    : const Color(0xFF212529),
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF212529),
               ),
             ),
           ],
