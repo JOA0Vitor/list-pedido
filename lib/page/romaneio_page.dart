@@ -48,6 +48,24 @@ class _RomaneioPageState extends State<RomaneioPage> {
   static const Color _evenColor = Colors.white;
   static const Color _oddColor = Color(0xFFFAFBFC);
 
+  // Future<void> _finalizarPedido() async {
+  //   setState(() => _finalizando = true);
+  //   try {
+  //     await _api.finalizarPedido(widget.codPedido);
+  //     if (!mounted) return;
+  //     // Devolve o codPedido pra Home, que troca a etapa localmente
+  //     // (sem precisar bater na API de novo pra saber o que já sabemos).
+  //     Navigator.pop(context, widget.codPedido);
+  //   } catch (e) {
+  //     if (!mounted) return;
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(SnackBar(content: Text('Erro ao finalizar pedido: $e')));
+  //   } finally {
+  //     if (mounted) setState(() => _finalizando = false);
+  //   }
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,27 +82,41 @@ class _RomaneioPageState extends State<RomaneioPage> {
           ],
         ),
         actions: [
+          // ElevatedButton(
+          //   onPressed: () async {
+          //     print('Finalizando pedido... ${widget.codPedido}');
+          //     Navigator.pop(context);
+          //     await _api.finalizarPedido(widget.codPedido);
+          //   },
+          //   style: ElevatedButton.styleFrom(
+          //     backgroundColor: Color(0xFF0043AC),
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(8),
+          //     ),
+          //   ),
+          //   child: const Text(
+          //     'Finalizar Pedido',
+          //     style: TextStyle(color: Color(0xFFFFFFFF)),
+          //   ),
+          // ),
           ElevatedButton(
             onPressed: () async {
-              // await finalizarPedido();
-
-              await WhatsAppService.enviarMensagem(
-                telefone: '5581999999999', // Número do destinatário
-                mensagem: 'Pedido ${widget.codPedido} finalizado ✅',
-              );
-
-              // 3. Navega para home
-              if (mounted) {
-                Navigator.pushReplacement(
+              //Colocar um alertDialog perguntando se vai ter asssessorio,
+              // se sim, vai mandar os dados para o backend do app corte industrial, e depois fechar a tela
+              //se não, vai finalizar o pedido e fechar a tela
+              try {
+                await _api.finalizarPedido(widget.codPedido);
+                if (!mounted) return;
+                Navigator.pop(
                   context,
-                  MaterialPageRoute(builder: (_) => const HomePage()),
+                  widget.codPedido,
+                ); // <- devolve o codPedido
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erro ao finalizar pedido: $e')),
                 );
               }
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => HomePage()),
-              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF0043AC),

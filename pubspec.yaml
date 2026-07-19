@@ -15,14 +15,16 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.6.0
   firebase_core: ^4.11.0
-  firebase_database: ^12.4.3
+  # firebase_database: ^12.4.3
   shared_preferences: ^2.5.5
   firebase_auth: ^6.5.3
   intl: ^0.20.2
   flutter_local_notifications: ^18.0.0
   audioplayers: ^6.7.1
-  whatsapp_share2: ^2.0.2
+  # whatsapp_share2: ^2.0.2
   url_launcher: ^6.2.5
+  pdf: ^3.12.0
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:

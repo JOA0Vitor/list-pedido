@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pedidosdp/models/clientes_model.dart';
 import 'package:pedidosdp/models/pedidos_model.dart';
+import 'package:pedidosdp/page/corte_industrial.dart';
 import 'package:pedidosdp/page/list_pedidos.dart';
 import 'package:pedidosdp/page/romaneio_page.dart';
 import 'package:pedidosdp/service/api_service.dart';
@@ -67,11 +68,11 @@ class _HomePageState extends State<HomePage> {
 
   late Future<List<dynamic>> _futureDados;
 
-  Future<void> _autenticar() async {
-    if (FirebaseAuth.instance.currentUser == null) {
-      await FirebaseAuth.instance.signInAnonymously();
-    }
-  }
+  // Future<void> _autenticar() async {
+  //   if (FirebaseAuth.instance.currentUser == null) {
+  //     await FirebaseAuth.instance.signInAnonymously();
+  //   }
+  // }
 
   void _filtrar() {
     setState(() {});
@@ -142,6 +143,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_emptyFocus);
     });
@@ -158,7 +164,7 @@ class _HomePageState extends State<HomePage> {
     _buscarPedidos();
 
     _searchController.addListener(() => setState(() {}));
-    _autenticar();
+    // _autenticar();
     _fetchClientes();
 
     _timer = Timer.periodic(
@@ -399,32 +405,49 @@ class _HomePageState extends State<HomePage> {
 
                         ListTile(
                           title: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RomaneioPage(
-                                    codPedido: _pedidoSelecionado!.codPedido,
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: _operadorSelecionado == null
+                                ? null
+                                : () async {
+                                    final codPedidoFinalizado =
+                                        await Navigator.push<String>(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => RomaneioPage(
+                                              codPedido:
+                                                  _pedidoSelecionado!.codPedido,
+                                            ),
+                                          ),
+                                        );
+
+                                    if (codPedidoFinalizado != null &&
+                                        mounted) {
+                                      setState(() {
+                                        _pedidoSelecionado = _pedidoSelecionado!
+                                            .copyWith(
+                                              codEtapa: PedidoModel
+                                                  .etapaRomaneioConcluidoLocal,
+                                            );
+                                      });
+                                    }
+                                  },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF0043AC),
+                              backgroundColor: const Color(0xFF0043AC),
+                              disabledBackgroundColor: const Color(0xFFB0B0B0),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: Text(
                               'Acompanhar Pedido ${_pedidoSelecionado!.codPedido}',
-                              style: TextStyle(color: Color(0xFFFFFFFF)),
+                              style: const TextStyle(color: Color(0xFFFFFFFF)),
                             ),
                           ),
                         ),
                         ListTile(
                           title: Text(
-                            'Colocar uma condição no botao',
+                            'Selecione o operador para acompanhar o pedido.',
                             style: TextStyle(color: Colors.black),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
@@ -458,9 +481,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => RomaneioPage(
-                      codPedido: '4481',
-                    ),
+                    builder: (context) => CorteIndustrial(codPedido: '4481'),
                   ),
                 );
               },
@@ -479,22 +500,36 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Expanded(
                         flex: 3,
-                        child: TextFormField(
-                          controller: _searchController,
-                          autofocus: true,
-                          decoration: InputDecoration(
-                            hintText: 'Buscar cliente...',
-                            prefixIcon: const Icon(Icons.search),
-                            suffixIcon: _searchController.text.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () => _searchController.clear(),
-                                  )
-                                : null,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Cliente',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.start,
                             ),
-                          ),
+                            TextFormField(
+                              controller: _searchController,
+                              autofocus: true,
+                              decoration: InputDecoration(
+                                hintText: 'Buscar cliente...',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () =>
+                                            _searchController.clear(),
+                                      )
+                                    : null,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -514,78 +549,111 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Expanded(
                         flex: 3,
-                        child: TextFormField(
-                          controller: _dataInicialController,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            hintText: 'Data inicial',
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.calendar_month),
-                              onPressed: () async {
-                                final dataSelecionada = await showDatePicker(
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime(2000),
-                                  lastDate: DateTime(2100),
-                                );
-                                if (dataSelecionada != null) {
-                                  _dataInicialController.text =
-                                      "${dataSelecionada.day.toString().padLeft(2, '0')}/"
-                                      "${dataSelecionada.month.toString().padLeft(2, '0')}/"
-                                      "${dataSelecionada.year}";
-                                }
-                              },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Data Inicial',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.start,
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                            TextFormField(
+                              controller: _dataInicialController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                hintText: 'Data inicial',
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.calendar_month),
+                                  onPressed: () async {
+                                    final dataSelecionada =
+                                        await showDatePicker(
+                                          context: context,
+                                          initialDate: DateTime.now(),
+                                          firstDate: DateTime(2000),
+                                          lastDate: DateTime(2100),
+                                        );
+                                    if (dataSelecionada != null) {
+                                      _dataInicialController.text =
+                                          "${dataSelecionada.day.toString().padLeft(2, '0')}/"
+                                          "${dataSelecionada.month.toString().padLeft(2, '0')}/"
+                                          "${dataSelecionada.year}";
+                                    }
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         flex: 3,
-                        child: TextFormField(
-                          controller: _dataFinalController,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            hintText: 'Data final',
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.calendar_month),
-                              onPressed: () async {
-                                final dataSelecionada = await showDatePicker(
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime(2000),
-                                  lastDate: DateTime(2100),
-                                );
-                                if (dataSelecionada != null) {
-                                  _dataFinalController.text =
-                                      "${dataSelecionada.day.toString().padLeft(2, '0')}/"
-                                      "${dataSelecionada.month.toString().padLeft(2, '0')}/"
-                                      "${dataSelecionada.year}";
-                                }
-                              },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Data Final',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.start,
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                            TextFormField(
+                              controller: _dataFinalController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                hintText: 'Data final',
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.calendar_month),
+                                  onPressed: () async {
+                                    final dataSelecionada =
+                                        await showDatePicker(
+                                          context: context,
+                                          initialDate: DateTime.now(),
+                                          firstDate: DateTime(2000),
+                                          lastDate: DateTime(2100),
+                                        );
+                                    if (dataSelecionada != null) {
+                                      _dataFinalController.text =
+                                          "${dataSelecionada.day.toString().padLeft(2, '0')}/"
+                                          "${dataSelecionada.month.toString().padLeft(2, '0')}/"
+                                          "${dataSelecionada.year}";
+                                    }
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _buscarPedidos,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(108, 55),
-                          backgroundColor: const Color(0xFF0043AC),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      
+                      Padding(
+                        padding: const EdgeInsets.only(top: 22),
+                        child: ElevatedButton(
+                          onPressed: _buscarPedidos,
+                          style: ElevatedButton.styleFrom(
+                            
+                            minimumSize: const Size(108, 55),
+                            backgroundColor: const Color(0xFF0043AC),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Filtrar',
-                          style: TextStyle(color: Colors.white),
+                          child: const Text(
+                            'Filtrar',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                     ],
