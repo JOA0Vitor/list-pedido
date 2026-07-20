@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:pedidosdp/models/clientes_model.dart';
+import 'package:pedidosdp/models/corte_model.dart';
 import 'package:pedidosdp/models/pedidos_model.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -253,7 +254,10 @@ class ApiService {
     }
   }
 
-  Future<void> finalizarPedido(String codPedido) async {
+  Future<void> finalizarPedido(
+    String codPedido,
+    List<Map<String, Object?>> itensParaCorte,
+  ) async {
     final uri = Uri.parse('$_baseUrlRomaneioCasa/pedidos/$codPedido/finalizar');
     print('Finalizando pedido uri: $uri');
     final response = await _client
@@ -273,65 +277,61 @@ class ApiService {
     }
   }
 
-  // Future<Map<String, dynamic>> getRomaneioTextil({
-  //   List<String>? pedidos,
-  //   String? dataEmissaoInicio,
-  //   String? dataEmissaoFim,
-  //   List<int>? situacoes,
-  //   String? continuationToken,
-  //   int numeroPedidos = 371,
-  // }) async {
-  //   final queryParams = <String, String>{};
+  Future<void> finalizarPedidoTest(
+    String codPedido,
+    List<Map<String, dynamic>> itensParaCorte,
+  ) async {
+    final uri = Uri.parse('$_baseUrl/pedidos/$codPedido/finalizar');
 
-  //   if (continuationToken != null && continuationToken.isNotEmpty) {
-  //     queryParams['continuationToken'] = continuationToken;
-  //   }
-  //   if (dataEmissaoInicio != null && dataEmissaoInicio.isNotEmpty) {
-  //     queryParams['dataEmissaoInicio'] = dataEmissaoInicio;
-  //   }
-  //   if (dataEmissaoFim != null && dataEmissaoFim.isNotEmpty) {
-  //     queryParams['dataEmissaoFim'] = dataEmissaoFim;
-  //   }
-  //   if (pedidos != null && pedidos.isNotEmpty) {
-  //     for (final p in pedidos) {
-  //       queryParams.putIfAbsent('pedido', () => p);
-  //     }
-  //   }
-  //   if (situacoes != null && situacoes.isNotEmpty) {
-  //     for (final s in situacoes) {
-  //       queryParams.putIfAbsent('situacao', () => s.toString());
-  //     }
-  //   }
+    final response = await _client
+        .post(
+          uri,
+          headers: {
+            'accept': 'application/json',
+            'x-api-key': apiToken,
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'itens': itensParaCorte}),
+        )
+        .timeout(const Duration(seconds: 10));
 
-  //   final uri = Uri.parse(
-  //     '$_baseUrl/romaneioTextil',
-  //   ).replace(queryParameters: queryParams.isEmpty ? null : queryParams);
+    print('STATUS FINALIZAR: ${response.statusCode}');
+    print('BODY FINALIZAR: ${response.body}');
 
-  //   final responseRomaneio = await _client.get(
-  //     Uri.parse('$_baseUrlRomaneio/$numeroPedidos/itens?cod_empresa=$empresa'),
-  //     headers: {'X-API-Key': 'sua-chave-aqui'},
-  //   );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Erro ao finalizar pedido: ${response.statusCode} - ${response.body}',
+      );
+    }
+  }
 
-  //   debugPrint('Romaneio uri: $uri');
+  //////////////////////--- CORTE INDUSTRIAL ---//////////////////////
+  Future<PaginatedResponseCorte<CorteModel>> getFilaCorte() async {
+    final uri = Uri.parse('$_baseUrlRomaneio/corte/fila');
 
-  //   final response = await _client.get(
-  //     uri,
-  //     headers: {
-  //       'accept': 'application/json',
-  //       'empresa': empresa.toString(),
-  //       'Authorization': apiToken,
-  //     },
-  //   );
+    final response = await _client
+        .get(
+          uri,
+          headers: {'accept': 'application/json', 'x-api-key': apiToken},
+        )
+        .timeout(const Duration(seconds: 10));
 
-  //   debugPrint('STATUS: ${response.statusCode}');
-  //   debugPrint('BODY: ${response.body}');
+    print('STATUS FILA CORTE: ${response.statusCode}');
 
-  //   if (response.statusCode == 200) {
-  //     return jsonDecode(response.body) as Map<String, dynamic>;
-  //   }
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      // O backend devolve só {"itens": [...]}, sem "codPedido" no nível raiz -
+      // então completamos o campo que o PaginatedResponseCorte espera.
+      return PaginatedResponseCorte.fromJson({
+        'codPedido': '',
+        'itens': jsonData['itens'],
+      }, CorteModel.fromJson);
+    }
 
-  //   throw Exception('Erro romaneio: ${response.statusCode} - ${response.body}');
-  // }
+    throw Exception(
+      'Erro ao buscar fila de corte: ${response.statusCode} - ${response.body}',
+    );
+  }
 
   void dispose() {
     _client.close();

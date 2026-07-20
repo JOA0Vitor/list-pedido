@@ -56,7 +56,7 @@ class PedidoCard extends StatelessWidget {
             ),
             const SizedBox(width: 14),
             InfoColumn(
-              label: 'CLIENTE - ${pedido.codEtapa}',
+              label: 'CLIENTE',
               // value: pedido.codCliente.toString(),
               // value: '',
               value: nomeCliente == ''

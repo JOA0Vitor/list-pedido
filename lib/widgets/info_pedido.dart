@@ -24,7 +24,14 @@ class InfoColumn extends StatelessWidget {
             fontSize: 14,
           ),
         ),
-        Text(value, style: valueStyle),
+        label != 'DATA'
+            ? Text(value, style: valueStyle)
+            : Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(value, style: valueStyle),
+            ),
+
+        // Text(value, style: valueStyle),
       ],
     );
   }

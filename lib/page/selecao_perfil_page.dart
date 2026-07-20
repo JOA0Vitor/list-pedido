@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'home_page.dart';
-import 'corte_industrial_home_page.dart';
+import 'pedidos/home_page.dart';
+import 'corte/corte_industrial_home_page.dart';
 
 enum TipoUsuario { operadores, corte }
 

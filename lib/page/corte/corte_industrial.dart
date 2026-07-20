@@ -54,6 +54,8 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
       codCor: '8221',
       corHex: '#0043AC',
       peso: 15,
+      status: 1,
+      dataEmissao: '2026-06-16',
     ),
     CorteModel(
       codPedido: '4482',
@@ -61,6 +63,8 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
       codCor: '803',
       corHex: '#FF0000',
       peso: 28,
+      status: 1,
+      dataEmissao: '2026-06-16',
     ),
     CorteModel(
       codPedido: '4483',
@@ -68,8 +72,24 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
       codCor: '6500',
       corHex: '#000000',
       peso: 45,
+      status: 1,
+      dataEmissao: '2026-06-16',
     ),
   ];
+
+  Color corDoHex(String? hex, {Color corPadrao = const Color(0xFF9E9E9E)}) {
+    if (hex == null || hex.isEmpty) return corPadrao;
+
+    final hexLimpo = hex.replaceAll('#', '').trim();
+
+    try {
+      // Aceita "RRGGBB" (6 dígitos) ou já "AARRGGBB" (8 dígitos) se algum dia vier com alpha
+      final hexCompleto = hexLimpo.length == 6 ? 'FF$hexLimpo' : hexLimpo;
+      return Color(int.parse(hexCompleto, radix: 16));
+    } catch (_) {
+      return corPadrao; // hex inválido -> não quebra a tela, só usa a cor padrão
+    }
+  }
 
   double _calcularTotal(int index) {
     final qtdCamisas = double.tryParse(_controllerCamisas(index).text) ?? 0;
@@ -132,6 +152,12 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
     ]);
   }
 
+  final Map<String, FocusNode> _focusNodes = {};
+
+  FocusNode _focusFor(String chave) {
+    return _focusNodes.putIfAbsent(chave, () => FocusNode());
+  }
+
   @override
   void dispose() {
     for (final c in _controllersQtdCamisas.values) {
@@ -139,6 +165,9 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
     }
     for (final c in _controllersQtdGramas.values) {
       c.dispose();
+    }
+    for (final node in _focusNodes.values) {
+      node.dispose();
     }
     // _api.dispose();
     super.dispose();
@@ -159,7 +188,11 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
           children: [
             const Text(
               'Corte Industrial',
-              style: TextStyle(fontSize: 20, color: Color(0xFF0043AC)),
+              style: TextStyle(
+                fontSize: 20,
+                color: Color(0xFF0043AC),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Text(
               'Pedido ${widget.codPedido}',
@@ -200,7 +233,7 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
                       children: [
                         _headerCell('Tipo', flex: 2, align: TextAlign.center),
                         _headerCell('Ref', flex: 2, align: TextAlign.right),
-                        _headerCell('Cor', flex: 2, align: TextAlign.right),
+                        // _headerCell('Cor', flex: 2, align: TextAlign.right),
                         _headerCell('Peso', flex: 2, align: TextAlign.right),
                         _headerCell(
                           'Qtd.camisas',
@@ -303,13 +336,33 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
                                       flex: 1,
                                       isCode: true,
                                     ),
-                                    _verticalDividerRow(),
-                                    _dataCell(
-                                      item.corHex ?? '-',
-                                      flex: 1,
-                                      center: true,
-                                      bold: true,
-                                    ),
+                                    // _verticalDividerRow(),//deixar como comentário por
+                                    // tipoGolaAtual == TipoGola.gola
+                                    //     ? Expanded(
+                                    //         flex: 1,
+                                    //         child: Container(
+                                    //           width: 50,
+                                    //           height: 30,
+                                    //           padding:
+                                    //               const EdgeInsets.symmetric(
+                                    //                 horizontal: 8,
+                                    //                 vertical: 4,
+                                    //               ),
+                                    //           decoration: BoxDecoration(
+                                    //             color: corDoHex(
+                                    //               item.corHex,
+                                    //             ), // antes: Color(0xFF0043AC)
+                                    //             borderRadius:
+                                    //                 BorderRadius.circular(8),
+                                    //           ),
+                                    //         ),
+                                    //       )
+                                    //     : _dataCell(
+                                    //         item.corHex ?? '-',
+                                    //         flex: 1,
+                                    //         center: true,
+                                    //         bold: true,
+                                    //       ),
                                     _verticalDividerRow(),
                                     _dataCellPecas(
                                       '${item.peso ?? 0}KG',
@@ -320,10 +373,17 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
                                     Expanded(
                                       flex: 1,
                                       child: TextFormField(
+                                        focusNode: _focusFor('camisas_$index'),
+                                        textInputAction: TextInputAction.next,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ),
+                                        onFieldSubmitted: (_) {
+                                          FocusScope.of(context).requestFocus(
+                                            _focusFor('gramas_$index'),
+                                          );
+                                        },
                                         textAlignVertical:
                                             TextAlignVertical.center,
                                         keyboardType: TextInputType.number,
@@ -352,7 +412,17 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
                                         : Expanded(
                                             flex: 1,
                                             child: TextFormField(
+                                              focusNode: _focusFor(
+                                                'gramas_$index',
+                                              ),
                                               textAlign: TextAlign.center,
+                                              textInputAction:
+                                                  TextInputAction.next,
+                                              onFieldSubmitted: (_) {
+                                                FocusScope.of(
+                                                  context,
+                                                ).unfocus();
+                                              },
                                               textAlignVertical:
                                                   TextAlignVertical.center,
                                               keyboardType:
@@ -572,7 +642,7 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               textRef,

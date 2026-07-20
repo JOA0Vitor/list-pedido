@@ -1,8 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pedidosdp/page/corte_industrial_home_page.dart';
-import 'package:pedidosdp/page/home_page.dart';
+import 'package:pedidosdp/page/corte/corte_industrial_home_page.dart';
+import 'package:pedidosdp/page/pedidos/home_page.dart';
 import 'package:pedidosdp/page/selecao_perfil_page.dart';
 import 'package:pedidosdp/service/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +20,8 @@ void main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
+
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   NotificationService();
 

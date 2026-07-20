@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
-import 'package:pedidosdp/page/home_page.dart';
+import 'package:pedidosdp/page/corte/corte_industrial.dart';
+import 'package:pedidosdp/page/pedidos/home_page.dart';
 import 'package:pedidosdp/service/whatsapp_service.dart';
 
-import '../service/api_service.dart';
+import '../../service/api_service.dart';
 
 class RomaneioPage extends StatefulWidget {
   final String codPedido;
@@ -46,25 +47,59 @@ class _RomaneioPageState extends State<RomaneioPage> {
     0xFFE3F2FD,
   ); // Azul claro quando selecionado
   static const Color _evenColor = Colors.white;
-  static const Color _oddColor = Color(0xFFFAFBFC);
 
-  // Future<void> _finalizarPedido() async {
-  //   setState(() => _finalizando = true);
-  //   try {
-  //     await _api.finalizarPedido(widget.codPedido);
-  //     if (!mounted) return;
-  //     // Devolve o codPedido pra Home, que troca a etapa localmente
-  //     // (sem precisar bater na API de novo pra saber o que já sabemos).
-  //     Navigator.pop(context, widget.codPedido);
-  //   } catch (e) {
-  //     if (!mounted) return;
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(SnackBar(content: Text('Erro ao finalizar pedido: $e')));
-  //   } finally {
-  //     if (mounted) setState(() => _finalizando = false);
-  //   }
-  // }
+  static const Color _oddColor = Color(0xFFFAFBFC);
+  final Map<int, TipoGola> _tipoGolaPorItem = {};
+  final Map<int, TextEditingController> _controllersQtdCamisas = {};
+  final Map<int, TextEditingController> _controllersQtdGramas = {};
+
+  String _formatarTotal(int index) {
+    final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
+    final total = _calcularTotal(index);
+
+    if (tipoGola == TipoGola.gola) {
+      return '${total.toStringAsFixed(0)}KIT';
+    }
+    return '${_formatarPesoComPonto(total)}KG';
+  }
+
+  TextEditingController _controllerCamisas(int index) {
+    return _controllersQtdCamisas.putIfAbsent(index, () {
+      final controller = TextEditingController();
+      controller.addListener(() => setState(() {}));
+      return controller;
+    });
+  }
+
+  TextEditingController _controllerGramas(int index) {
+    return _controllersQtdGramas.putIfAbsent(index, () {
+      final controller = TextEditingController();
+      controller.addListener(() => setState(() {}));
+      return controller;
+    });
+  }
+
+  double _calcularTotal(int index) {
+    final qtdCamisas = double.tryParse(_controllerCamisas(index).text) ?? 0;
+
+    if ((_tipoGolaPorItem[index] ?? TipoGola.gola) == TipoGola.gola) {
+      return qtdCamisas;
+    }
+
+    final qtdGramas = double.tryParse(_controllerGramas(index).text) ?? 0;
+    return qtdCamisas * qtdGramas;
+  }
+
+  String _formatarPesoComPonto(double valor) {
+    final inteiro = valor.round();
+    final str = inteiro.toString();
+    final digitos = str.length;
+
+    if (digitos <= 3) return str;
+
+    final posicaoPonto = digitos - 3;
+    return '${str.substring(0, posicaoPonto)}.${str.substring(posicaoPonto)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,35 +117,31 @@ class _RomaneioPageState extends State<RomaneioPage> {
           ],
         ),
         actions: [
-          // ElevatedButton(
-          //   onPressed: () async {
-          //     print('Finalizando pedido... ${widget.codPedido}');
-          //     Navigator.pop(context);
-          //     await _api.finalizarPedido(widget.codPedido);
-          //   },
-          //   style: ElevatedButton.styleFrom(
-          //     backgroundColor: Color(0xFF0043AC),
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(8),
-          //     ),
-          //   ),
-          //   child: const Text(
-          //     'Finalizar Pedido',
-          //     style: TextStyle(color: Color(0xFFFFFFFF)),
-          //   ),
-          // ),
           ElevatedButton(
             onPressed: () async {
               //Colocar um alertDialog perguntando se vai ter asssessorio,
               // se sim, vai mandar os dados para o backend do app corte industrial, e depois fechar a tela
               //se não, vai finalizar o pedido e fechar a tela
               try {
-                await _api.finalizarPedido(widget.codPedido);
+                final resposta = await _futureRomaneio;
+                final itens = resposta.itens;
+
+                final itensParaCorte = itens.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
+
+                  return {
+                    'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
+                    'cor': item.codCor,
+                    'qtd': item.qtdPedida,
+                    'unidade': _formatarTotal(index) == 'KIT' ? 'KIT' : 'KG',
+                  };
+                }).toList();
+
+                await _api.finalizarPedido(widget.codPedido, itensParaCorte);
                 if (!mounted) return;
-                Navigator.pop(
-                  context,
-                  widget.codPedido,
-                ); // <- devolve o codPedido
+                Navigator.pop(context, widget.codPedido);
               } catch (e) {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -138,9 +169,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          // if (snapshot.hasError) {
-          //   return Center(child: Text('Erro ROMANEIO: ${snapshot.error}'));
-          // }
+          
           if (snapshot.hasError) {
             return Center(
               child: Column(

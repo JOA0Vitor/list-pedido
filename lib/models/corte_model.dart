@@ -23,6 +23,8 @@ class CorteModel {
   final String? codCor;
   final String? corHex; //vou se coloco no modelo
   final int? peso;
+  final int status;
+  final String dataEmissao;
 
   CorteModel({
     required this.codPedido,
@@ -30,6 +32,8 @@ class CorteModel {
     this.codCor,
     this.corHex,
     this.peso,
+    required this.status,
+    required this.dataEmissao,
   });
 
   factory CorteModel.fromJson(Map<String, dynamic> json) => CorteModel(
@@ -38,6 +42,8 @@ class CorteModel {
     codCor: json['codCor'],
     corHex: json['corHex'],
     peso: ((json['peso'] ?? 0) as num).toInt(),
+    status: json['status'] as int,
+    dataEmissao: json['dataEmissao'] ?? '',
   );
 
   Map<String, dynamic> toJson() => {
@@ -46,5 +52,7 @@ class CorteModel {
     'codCor': codCor,
     'corHex': corHex,
     'peso': peso,
+    'status': status,
+    'dataEmissao': dataEmissao,
   };
 }

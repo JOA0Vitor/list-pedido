@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/home_page.dart';
+import 'package:pedidosdp/page/pedidos/home_page.dart';
 import 'package:pedidosdp/service/usuario_service.dart';
 
 class SelecionarUsuarioPage extends StatelessWidget {

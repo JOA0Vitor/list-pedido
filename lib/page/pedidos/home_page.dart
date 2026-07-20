@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pedidosdp/models/clientes_model.dart';
 import 'package:pedidosdp/models/pedidos_model.dart';
-import 'package:pedidosdp/page/corte_industrial.dart';
-import 'package:pedidosdp/page/list_pedidos.dart';
-import 'package:pedidosdp/page/romaneio_page.dart';
+import 'package:pedidosdp/page/corte/corte_industrial.dart';
+import 'package:pedidosdp/page/pedidos/list_pedidos.dart';
+import 'package:pedidosdp/page/pedidos/romaneio_page.dart';
+import 'package:pedidosdp/page/selecao_perfil_page.dart';
 import 'package:pedidosdp/service/api_service.dart';
 import 'package:pedidosdp/service/notification_service.dart';
 import 'package:pedidosdp/widgets/formatData.dart';
@@ -466,7 +467,14 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SelecaoPerfilPage(),
+                ),
+              );
+            },
             icon: const Icon(Icons.info_outline, color: Color(0xFF0043AC)),
           ),
         ],
@@ -637,13 +645,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      
+
                       Padding(
                         padding: const EdgeInsets.only(top: 22),
                         child: ElevatedButton(
                           onPressed: _buscarPedidos,
                           style: ElevatedButton.styleFrom(
-                            
                             minimumSize: const Size(108, 55),
                             backgroundColor: const Color(0xFF0043AC),
                             shape: RoundedRectangleBorder(
@@ -652,7 +659,11 @@ class _HomePageState extends State<HomePage> {
                           ),
                           child: const Text(
                             'Filtrar',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
