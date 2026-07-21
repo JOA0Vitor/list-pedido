@@ -22,14 +22,14 @@ class PedidosScreen extends StatelessWidget {
 
     return ListView.separated(
       itemCount: pedidosOrdenados.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final pedido = pedidosOrdenados[index];
         return PedidoCard(
           pedido: pedido,
           nomeCliente: nomesClientes[pedido.codCliente] ?? 'Cliente ${pedido.codCliente}',
           onTap: () async {
-            print('tocou');
+            print('tocou lista ${pedido.codPedido}');
             onPedidoTap(pedido);
             // Navigator.push(
             //   context,

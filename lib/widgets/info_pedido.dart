@@ -6,6 +6,7 @@ class InfoColumn extends StatelessWidget {
   final TextStyle valueStyle;
 
   const InfoColumn({
+    super.key,
     required this.label,
     required this.value,
     required this.valueStyle,
@@ -27,9 +28,9 @@ class InfoColumn extends StatelessWidget {
         label != 'DATA'
             ? Text(value, style: valueStyle)
             : Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(value, style: valueStyle),
-            ),
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(value, style: valueStyle),
+              ),
 
         // Text(value, style: valueStyle),
       ],

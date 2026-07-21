@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/corte_model.dart';
 import 'package:pedidosdp/widgets/formatData.dart';

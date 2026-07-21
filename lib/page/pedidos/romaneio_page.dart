@@ -1,8 +1,8 @@
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:pedidosdp/page/corte/corte_industrial.dart';
-import 'package:pedidosdp/page/pedidos/home_page.dart';
-import 'package:pedidosdp/service/whatsapp_service.dart';
 
 import '../../service/api_service.dart';
 
@@ -43,9 +43,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
   static const Color _borderColor = Color(0xFFDEE2E6);
   static const double _borderWidth = 1.0;
 
-  static const Color _selectedColor = Color(
-    0xFFE3F2FD,
-  ); // Azul claro quando selecionado
+ 
   static const Color _evenColor = Colors.white;
 
   static const Color _oddColor = Color(0xFFFAFBFC);
@@ -119,27 +117,73 @@ class _RomaneioPageState extends State<RomaneioPage> {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              //Colocar um alertDialog perguntando se vai ter asssessorio,
-              // se sim, vai mandar os dados para o backend do app corte industrial, e depois fechar a tela
-              //se não, vai finalizar o pedido e fechar a tela
+              final vaiTerAcessorio = await showDialog<bool>(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  title: const Text('Confirmar finalização'),
+                  content: const Text(
+                    'Vai ter acessório?',
+                    style: TextStyle(fontSize: 21),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFAC0000),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Não',
+                        style: TextStyle(color: Color(0xFFFFFFFF)),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF0043AC),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Sim',
+                        style: TextStyle(color: Color(0xFFFFFFFF)),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (vaiTerAcessorio == null) return;
+
               try {
-                final resposta = await _futureRomaneio;
-                final itens = resposta.itens;
+                List<Map<String, dynamic>>? itensParaCorte;
 
-                final itensParaCorte = itens.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
+                if (vaiTerAcessorio) {
+                  final resposta = await _futureRomaneio;
+                  final itens = resposta.itens;
 
-                  return {
-                    'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
-                    'cor': item.codCor,
-                    'qtd': item.qtdPedida,
-                    'unidade': _formatarTotal(index) == 'KIT' ? 'KIT' : 'KG',
-                  };
-                }).toList();
+                  itensParaCorte = itens.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
 
-                await _api.finalizarPedido(widget.codPedido, itensParaCorte);
+                    return {
+                      'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
+                      'cor': item.codCor,
+                      'qtd': item.qtdPedida,
+                      'unidade': _formatarTotal(index) == 'KIT' ? 'KIT' : 'KG',
+                    };
+                  }).toList();
+                }
+
+                await _api.finalizarPedidoT(
+                  widget.codPedido,
+                  itens: itensParaCorte,
+                );
                 if (!mounted) return;
                 Navigator.pop(context, widget.codPedido);
               } catch (e) {
@@ -169,7 +213,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -239,7 +282,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: itens.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           Container(height: 1, color: _borderColor),
                       itemBuilder: (context, index) {
                         final item = itens[index];

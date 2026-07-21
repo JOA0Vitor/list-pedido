@@ -15,7 +15,6 @@ class ApiService {
   static const String _baseUrlClientes =
       'https://187.85.164.196/api/cadastrosgerais/v10';
   static const String _baseUrlRomaneio = 'http://192.168.0.36:8000';
-  static const String _baseUrlRomaneioCasa = 'http://192.168.1.103:8000';
   final int empresa = 2;
 
   final String apiToken;
@@ -33,51 +32,7 @@ class ApiService {
     return '$_baseUrl/$modulo/$servico';
   }
 
-  // Future<PaginatedResponsePedido<PedidoModel>> getListPedidos(
-  //   int empresa,
-  //   String dataDigitacaoInicio,
-  //   String dataDigitacaoFim,
-  // ) async {
-  //   final uri = Uri.parse('$_baseUrl/pedidoVenda').replace(
-  //     queryParameters: {
-  //       'dataDigitacaoInicio': dataDigitacaoInicio,
-  //       'dataDigitacaoFim': dataDigitacaoFim,
-  //     },
-  //   );
-
-  //   print('Empresa uri: $uri');
-  //   try {
-  //     final response = await _client
-  //         .get(
-  //           uri,
-  //           headers: {
-  //             'accept': 'application/json',
-  //             'empresa': empresa.toString(),
-  //             'Authorization': apiToken,
-  //             'dataDigitacaoInicio': dataDigitacaoInicio,
-  //             'dataDigitacaoFim': dataDigitacaoFim,
-  //           },
-  //         )
-  //         .timeout(const Duration(seconds: 10));
-  //     print('STATUS PEDIDOS: ${response.statusCode}');
-  //     print('BODY PEDIDOS: ${response.body}');
-
-  //     if (response.statusCode == 200) {
-  //       final jsonData = jsonDecode(response.body);
-  //       return PaginatedResponsePedido.fromJson(jsonData, PedidoModel.fromJson);
-  //     } else {
-  //       throw Exception(
-  //         'Erro tabela de preços: ${response.statusCode} - ${response.body}',
-  //       );
-  //     }
-  //   } on TimeoutException {
-  //     throw Exception('Servidor não respondeu a tempo. Verifique sua conexão.');
-  //   } on SocketException {
-  //     throw Exception('Sem conexão com a internet.');
-  //   } catch (e) {
-  //     throw Exception('Erro inesperado: $e');
-  //   }
-  // }
+  //usar esse Endpoint - /pedidos/recentes - para pegar os pedidos mais recentes
 
   Future<PaginatedResponsePedido<PedidoModel>> getListPedidos(
     int empresa,
@@ -88,7 +43,6 @@ class ApiService {
     final chaveCache =
         'pedidos_cache_${empresa}_${dataDigitacaoInicio}_$dataDigitacaoFim';
 
-    // Agora aponta pro SEU backend (que já cacheia server-side), não mais direto na API externa
     final uri = Uri.parse('$_baseUrl/pedidoVenda/').replace(
       queryParameters: {
         // 'empresa': empresa.toString(),
@@ -119,7 +73,6 @@ class ApiService {
           PedidoModel.fromJson,
         );
 
-        // só grava cache local se veio algo útil
         if (resultado.data.isNotEmpty) {
           await prefs.setString(chaveCache, response.body);
         }
@@ -254,58 +207,21 @@ class ApiService {
     }
   }
 
-  Future<void> finalizarPedido(
-    String codPedido,
-    List<Map<String, Object?>> itensParaCorte,
-  ) async {
-    final uri = Uri.parse('$_baseUrlRomaneioCasa/pedidos/$codPedido/finalizar');
-    print('Finalizando pedido uri: $uri');
-    final response = await _client
-        .post(
-          uri,
-          headers: {'accept': 'application/json', 'x-api-key': apiToken},
-        )
-        .timeout(const Duration(seconds: 10));
-
-    print('STATUS FINALIZAR: ${response.statusCode}');
-    print('BODY FINALIZAR: ${response.body}');
+  Future<void> finalizarPedidoT(
+    String codPedido, {
+    List<Map<String, dynamic>>? itens,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrlRomaneio/pedidos/$codPedido/finalizar'),
+      headers: {'X-API-Key': apiToken, 'Content-Type': 'application/json'},
+      body: itens != null ? jsonEncode({'itens': itens}) : null,
+    );
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'Erro ao finalizar pedido: ${response.statusCode} - ${response.body}',
-      );
+      throw Exception('Falha ao finalizar pedido: ${response.body}');
     }
   }
 
-  Future<void> finalizarPedidoTest(
-    String codPedido,
-    List<Map<String, dynamic>> itensParaCorte,
-  ) async {
-    final uri = Uri.parse('$_baseUrl/pedidos/$codPedido/finalizar');
-
-    final response = await _client
-        .post(
-          uri,
-          headers: {
-            'accept': 'application/json',
-            'x-api-key': apiToken,
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({'itens': itensParaCorte}),
-        )
-        .timeout(const Duration(seconds: 10));
-
-    print('STATUS FINALIZAR: ${response.statusCode}');
-    print('BODY FINALIZAR: ${response.body}');
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Erro ao finalizar pedido: ${response.statusCode} - ${response.body}',
-      );
-    }
-  }
-
-  //////////////////////--- CORTE INDUSTRIAL ---//////////////////////
   Future<PaginatedResponseCorte<CorteModel>> getFilaCorte() async {
     final uri = Uri.parse('$_baseUrlRomaneio/corte/fila');
 
@@ -320,8 +236,6 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-      // O backend devolve só {"itens": [...]}, sem "codPedido" no nível raiz -
-      // então completamos o campo que o PaginatedResponseCorte espera.
       return PaginatedResponseCorte.fromJson({
         'codPedido': '',
         'itens': jsonData['itens'],

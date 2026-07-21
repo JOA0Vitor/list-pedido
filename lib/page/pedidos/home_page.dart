@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pedidosdp/models/clientes_model.dart';
@@ -12,7 +11,6 @@ import 'package:pedidosdp/page/selecao_perfil_page.dart';
 import 'package:pedidosdp/service/api_service.dart';
 import 'package:pedidosdp/service/notification_service.dart';
 import 'package:pedidosdp/widgets/formatData.dart';
-import 'package:pedidosdp/widgets/formatDataApi.dart';
 import 'package:pedidosdp/widgets/info_pedido.dart';
 import 'package:pedidosdp/widgets/status_etapa.dart';
 
@@ -375,7 +373,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                               const SizedBox(height: 6),
                               DropdownButtonFormField<String>(
-                                value: _operadorSelecionado,
+                                initialValue: _operadorSelecionado,
                                 decoration: InputDecoration(
                                   isDense: true,
                                   contentPadding: const EdgeInsets.symmetric(
