@@ -69,7 +69,7 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
       DeviceOrientation.landscapeRight,
     ]);
     _api = ApiService(
-      apiToken: 'SEU_TOKEN_AQUI',
+      apiToken: 'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
     ); // mesmo token usado nas outras telas
     _buscarPedidos();
   }

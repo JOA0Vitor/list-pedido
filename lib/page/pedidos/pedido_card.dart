@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:pedidosdp/models/pedido_recentes_model.dart';
 import 'package:pedidosdp/models/pedidos_model.dart';
 import 'package:pedidosdp/widgets/formatData.dart';
 import 'package:pedidosdp/widgets/info_pedido.dart';
 import 'package:pedidosdp/widgets/status_etapa.dart';
 
 class PedidoCard extends StatelessWidget {
-  final PedidoModel pedido;
-  final String nomeCliente;
+  final PedidoRecenteModel pedido;
   final VoidCallback? onTap;
-
+ 
   const PedidoCard({
     super.key,
     required this.pedido,
-    required this.nomeCliente,
     this.onTap,
   });
-
-  String _primeirosDoisNomes(String nome) {
+ 
+  String _primeiroNome(String nome) {
     final partes = nome.trim().split(' ');
     return partes.take(1).join(' ');
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -35,7 +34,7 @@ class PedidoCard extends StatelessWidget {
           children: [
             InfoColumn(
               label: 'N° Pedido',
-              value: pedido.codPedido.toString(),
+              value: pedido.codPedido,
               valueStyle: const TextStyle(
                 color: Color(0xFF0043AC),
                 fontWeight: FontWeight.bold,
@@ -45,9 +44,7 @@ class PedidoCard extends StatelessWidget {
             const SizedBox(width: 10),
             InfoColumn(
               label: 'DATA',
-
-              /// HORA
-              value: formatarData(pedido.dataEmissao),
+              value: formatarData(pedido.dataDigitacao),
               valueStyle: const TextStyle(
                 color: Color(0xFF0B1628),
                 fontWeight: FontWeight.w300,
@@ -57,11 +54,7 @@ class PedidoCard extends StatelessWidget {
             const SizedBox(width: 14),
             InfoColumn(
               label: 'CLIENTE',
-              // value: pedido.codCliente.toString(),
-              // value: '',
-              value: nomeCliente == ''
-                  ? _primeirosDoisNomes(nomeCliente)
-                  : 'Ver mais',
+              value: _primeiroNome(pedido.nomeCliente),
               valueStyle: const TextStyle(
                 color: Color(0xFF0B1628),
                 fontWeight: FontWeight.bold,
@@ -72,31 +65,18 @@ class PedidoCard extends StatelessWidget {
             Expanded(
               flex: 5,
               child: EtapaColumn(
-                color: pedido.codEtapa == 3
-                    ? Color(0xFFFE8D00)
-                    : pedido.codEtapa == 4
-                    ? Color(0xFF4CAF50)
-                    : pedido.codEtapa == 5
-                    ? Color(0xFF677383)
-                    : pedido.codEtapa == 9
-                    ? Color(0xFF9E9E9E)
-                    : Color(0xFF2196F3),
-                codEtapa: pedido.codEtapa,
+                color: PedidoRecenteModel.corPorEtapa(pedido.codEtapa),
+                codEtapa: pedido.codEtapa!,
               ),
             ),
             const SizedBox(width: 10),
-            _AcoesRow(
-              concluido: pedido.codEtapa == 4,
-              codEtapa: pedido.codEtapa,
-              isOpen: pedido.codEtapa,
-            ),
+            _AcoesRow(codEtapa: pedido.codEtapa!),
           ],
         ),
       ),
     );
   }
 }
-
 // class InfoColumn extends StatelessWidget {
 //   final String label;
 //   final String value;
@@ -128,31 +108,33 @@ class PedidoCard extends StatelessWidget {
 // }
 
 class _AcoesRow extends StatelessWidget {
-  final bool concluido;
   final int codEtapa;
-  final int isOpen;
-
-  const _AcoesRow({
-    required this.concluido,
-    required this.codEtapa,
-    required this.isOpen,
-  });
-
+ 
+  const _AcoesRow({required this.codEtapa});
+ 
   @override
   Widget build(BuildContext context) {
+    // So mostra o icone de status quando ja saiu de "Separacao" (3) --
+    // ou seja, ja comecou a bipar (4) ou ja foi finalizado localmente (10).
+    final mostrarIcone = codEtapa != 3;
+    final concluidoLocalmente =
+        codEtapa == PedidoRecenteModel.etapaRomaneioConcluidoLocal;
+ 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        isOpen != 3 && isOpen != 5
+        mostrarIcone
             ? Icon(
-                concluido ? Icons.remove_circle_outline : Icons.check_circle,
-                color: PedidoModel.corPorEtapa(codEtapa),
+                concluidoLocalmente
+                    ? Icons.check_circle
+                    : Icons.remove_circle_outline,
+                color: PedidoRecenteModel.corPorEtapa(codEtapa),
                 size: 25,
               )
-            : SizedBox(),
+            : const SizedBox(),
         const SizedBox(width: 5),
-        Icon(
+        const Icon(
           Icons.arrow_forward_ios_rounded,
           color: Color(0xFF607d8b),
           size: 15,

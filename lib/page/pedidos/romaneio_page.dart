@@ -43,7 +43,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
   static const Color _borderColor = Color(0xFFDEE2E6);
   static const double _borderWidth = 1.0;
 
- 
   static const Color _evenColor = Colors.white;
 
   static const Color _oddColor = Color(0xFFFAFBFC);
@@ -117,81 +116,88 @@ class _RomaneioPageState extends State<RomaneioPage> {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              final vaiTerAcessorio = await showDialog<bool>(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => AlertDialog(
-                  title: const Text('Confirmar finalização'),
-                  content: const Text(
-                    'Vai ter acessório?',
-                    style: TextStyle(fontSize: 21),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFAC0000),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Não',
-                        style: TextStyle(color: Color(0xFFFFFFFF)),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF0043AC),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Sim',
-                        style: TextStyle(color: Color(0xFFFFFFFF)),
-                      ),
-                    ),
-                  ],
-                ),
+              // final vaiTerAcessorio = await showDialog<bool>(
+              //   context: context,
+              //   barrierDismissible: false,
+              //   builder: (context) => AlertDialog(
+              //     title: const Text('Confirmar finalização'),
+              //     content: const Text(
+              //       'Vai ter acessório?',
+              //       style: TextStyle(fontSize: 21),
+              //     ),
+              //     actions: [
+              //       TextButton(
+              //         onPressed: () => Navigator.pop(context, false),
+              //         style: ElevatedButton.styleFrom(
+              //           backgroundColor: Color(0xFFAC0000),
+              //           shape: RoundedRectangleBorder(
+              //             borderRadius: BorderRadius.circular(8),
+              //           ),
+              //         ),
+              //         child: const Text(
+              //           'Não',
+              //           style: TextStyle(color: Color(0xFFFFFFFF)),
+              //         ),
+              //       ),
+              //       ElevatedButton(
+              //         onPressed: () => Navigator.pop(context, true),
+              //         style: ElevatedButton.styleFrom(
+              //           backgroundColor: Color(0xFF0043AC),
+              //           shape: RoundedRectangleBorder(
+              //             borderRadius: BorderRadius.circular(8),
+              //           ),
+              //         ),
+              //         child: const Text(
+              //           'Sim',
+              //           style: TextStyle(color: Color(0xFFFFFFFF)),
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // );
+
+              // if (vaiTerAcessorio == null) return;
+
+              // try {
+              //   List<Map<String, dynamic>>? itensParaCorte;
+
+              //   if (vaiTerAcessorio) {
+              //     final resposta = await _futureRomaneio;
+              //     final itens = resposta.itens;
+
+              //     itensParaCorte = itens.asMap().entries.map((entry) {
+              //       final index = entry.key;
+              //       final item = entry.value;
+              //       final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
+
+              //       return {
+              //         'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
+              //         'cor': item.codCor,
+              //         'qtd': item.qtdPedida,
+              //         'unidade': _formatarTotal(index) == 'KIT' ? 'KIT' : 'KG',
+              //       };
+              //     }).toList();
+              //   }
+
+              //   await _api.finalizarPedidoT(
+              //     widget.codPedido,
+              //     itens: itensParaCorte,
+              //   );
+              //   if (!mounted) return;
+              //   Navigator.pop(context, widget.codPedido);
+              // } catch (e) {
+              //   if (!mounted) return;
+              //   ScaffoldMessenger.of(context).showSnackBar(
+              //     SnackBar(content: Text('Erro ao finalizar pedido: $e')),
+              //   );
+              // }
+
+              await _api.finalizarPedidoT(
+                widget.codPedido,
+                // itens: itensParaCorte,
               );
-
-              if (vaiTerAcessorio == null) return;
-
-              try {
-                List<Map<String, dynamic>>? itensParaCorte;
-
-                if (vaiTerAcessorio) {
-                  final resposta = await _futureRomaneio;
-                  final itens = resposta.itens;
-
-                  itensParaCorte = itens.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-                    final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
-
-                    return {
-                      'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
-                      'cor': item.codCor,
-                      'qtd': item.qtdPedida,
-                      'unidade': _formatarTotal(index) == 'KIT' ? 'KIT' : 'KG',
-                    };
-                  }).toList();
-                }
-
-                await _api.finalizarPedidoT(
-                  widget.codPedido,
-                  itens: itensParaCorte,
-                );
-                if (!mounted) return;
-                Navigator.pop(context, widget.codPedido);
-              } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erro ao finalizar pedido: $e')),
-                );
-              }
+              if (!mounted) return;
+              Navigator.pop(context, widget.codPedido);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF0043AC),

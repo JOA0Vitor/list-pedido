@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:pedidosdp/models/clientes_model.dart';
 import 'package:pedidosdp/models/corte_model.dart';
+import 'package:pedidosdp/models/pedido_recentes_model.dart';
 import 'package:pedidosdp/models/pedidos_model.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -245,6 +246,26 @@ class ApiService {
     throw Exception(
       'Erro ao buscar fila de corte: ${response.statusCode} - ${response.body}',
     );
+  }
+
+  Future<RespostaPedidosRecentes> getPedidosRecentes(
+    int codEmpresa, {
+    int limite = 50,
+  }) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/pedidos/recentes').replace(
+      queryParameters: {
+        'cod_empresa': codEmpresa.toString(),
+        'limite': limite.toString(),
+      },
+    );
+
+    final response = await _client.get(uri, headers: {'x-api-key': apiToken});
+
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao buscar pedidos: ${response.statusCode}');
+    }
+
+    return RespostaPedidosRecentes.fromJson(jsonDecode(response.body));
   }
 
   void dispose() {

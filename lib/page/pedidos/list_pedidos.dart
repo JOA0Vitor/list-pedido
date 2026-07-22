@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:pedidosdp/models/pedido_recentes_model.dart';
 import 'package:pedidosdp/models/pedidos_model.dart';
 import 'package:pedidosdp/page/pedidos/pedido_card.dart';
 
 class PedidosScreen extends StatelessWidget {
-  final List<PedidoModel> pedidos;
-  final Map<int, String> nomesClientes;
-    final void Function(PedidoModel pedido) onPedidoTap;
+  final List<PedidoRecenteModel> pedidos;
+  // final Map<int, String> nomesClientes;
+    final void Function(PedidoRecenteModel pedido) onPedidoTap;
 
 
   const PedidosScreen({
     super.key,
     required this.pedidos,
-    required this.nomesClientes,
+    // required this.nomesClientes,
     required this.onPedidoTap,
   });
 
@@ -27,7 +28,7 @@ class PedidosScreen extends StatelessWidget {
         final pedido = pedidosOrdenados[index];
         return PedidoCard(
           pedido: pedido,
-          nomeCliente: nomesClientes[pedido.codCliente] ?? 'Cliente ${pedido.codCliente}',
+          // nomeCliente: pedido.nomeCliente,
           onTap: () async {
             print('tocou lista ${pedido.codPedido}');
             onPedidoTap(pedido);
