@@ -305,6 +305,8 @@ class _HomePageState extends State<HomePage> {
                                             builder: (context) => RomaneioPage(
                                               codPedido:
                                                   _pedidoSelecionado!.codPedido,
+                                              nameOperador:
+                                                  _operadorSelecionado!,
                                             ),
                                           ),
                                         );
@@ -344,6 +346,35 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ],
+                    )
+                  else if (_pedidoSelecionado!.codEtapa ==
+                      PedidoRecenteModel.etapaRomaneioConcluidoLocal)
+                    ListTile(
+                      title: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RomaneioPage(
+                                codPedido: _pedidoSelecionado!.codPedido,
+                                somenteLeitura: true,
+                                // nameOperador: _operadorSelecionado,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.visibility_outlined, color: Colors.white),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0043AC),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        label: Text(
+                          'Ver Pedido ${_pedidoSelecionado!.codPedido}',
+                          style: const TextStyle(color: Color(0xFFFFFFFF)),
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -436,7 +467,14 @@ class _HomePageState extends State<HomePage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Icon(Icons.refresh, color: Colors.white),
+                    child: const Text(
+                      'Pesquisar',
+                      style: TextStyle(
+                        color: Color(0xFFFFFFFF),
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),

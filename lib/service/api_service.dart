@@ -208,20 +208,42 @@ class ApiService {
     }
   }
 
-  Future<void> finalizarPedidoT(
-    String codPedido, {
-    List<Map<String, dynamic>>? itens,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrlRomaneio/pedidos/$codPedido/finalizar'),
-      headers: {'X-API-Key': apiToken, 'Content-Type': 'application/json'},
-      body: itens != null ? jsonEncode({'itens': itens}) : null,
-    );
+  // Future<void> finalizarPedidoT(
+  //   String codPedido, {
+  //   List<Map<String, dynamic>>? itens,
+  // }) async {
+  //   final response = await http.post(
+  //     Uri.parse('$_baseUrlRomaneio/pedidos/$codPedido/finalizar'),
+  //     headers: {'X-API-Key': apiToken, 'Content-Type': 'application/json'},
+  //     body: itens != null ? jsonEncode({'itens': itens}) : null,
+  //   );
 
-    if (response.statusCode != 200) {
-      throw Exception('Falha ao finalizar pedido: ${response.body}');
-    }
+  //   if (response.statusCode != 200) {
+  //     throw Exception('Falha ao finalizar pedido: ${response.body}');
+  //   }
+  // }
+
+  Future<void> finalizarPedidoT(
+  String? operador,
+  String codPedido, {
+  List<Map<String, dynamic>>? itens,
+}) async {
+  final response = await http.post(
+    Uri.parse('$_baseUrlRomaneio/pedidos/$codPedido/finalizar').replace(
+      queryParameters: {
+        if (operador != null && operador.isNotEmpty) 'operador': operador,
+      },
+    ),
+    headers: {'X-API-Key': apiToken, 'Content-Type': 'application/json'},
+    body: jsonEncode({'itens': itens ?? []}),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception(
+      'Falha ao finalizar pedido: ${response.statusCode} - ${response.body}',
+    );
   }
+}
 
   Future<PaginatedResponseCorte<CorteModel>> getFilaCorte() async {
     final uri = Uri.parse('$_baseUrlRomaneio/corte/fila');

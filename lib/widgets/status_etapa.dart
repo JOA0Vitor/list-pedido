@@ -13,7 +13,7 @@ class EtapaColumn extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          codEtapa == 3 ? 'A FAZER' : 'CARREGAMENTO CONCLUÍDO',
+          codEtapa == 3 ? 'A FAZER' : 'FINALIZADO PACIALMENTE',
           // etapa.toUpperCase(),
           style: const TextStyle(
             color: Color(0xFF0B1628),

@@ -45,8 +45,6 @@ class PedidoRecenteModel {
   bool get finalizadoLocalmente => situacao == situacaoConcluidoLocal;
   int get codEtapaOuPadrao => codEtapa ?? 0;
 
-  /// Regra combinada: so precisa entrar na fila de romaneio se estiver
-  /// comercialmente "Digitado" E ainda nao ter comecado a producao (etapa 3).
   bool get precisaDeRomaneio => situacao == 'Digitado' && codEtapa == 3;
 
    static Color corPorEtapa(int? codEtapa) {
@@ -60,7 +58,7 @@ class PedidoRecenteModel {
       case 9:
         return const Color(0xFF3d7d24); // Concluido (de verdade, na API)
       case etapaRomaneioConcluidoLocal:
-        return const Color(0xFF0043AC); // Concluido localmente (mesmo azul do botao Finalizar)
+        return const Color(0xFF3d7d24); // Concluido localmente (mesmo azul do botao Finalizar)
       default:
         return const Color(0xFF9E9E9E);
     }

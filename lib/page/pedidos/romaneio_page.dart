@@ -3,13 +3,21 @@
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:pedidosdp/page/corte/corte_industrial.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../service/api_service.dart';
 
 class RomaneioPage extends StatefulWidget {
   final String codPedido;
+  final bool somenteLeitura;
+  final String? nameOperador;
 
-  const RomaneioPage({super.key, required this.codPedido});
+  const RomaneioPage({
+    super.key,
+    required this.codPedido,
+    this.somenteLeitura = false,
+    this.nameOperador,
+  });
 
   @override
   State<RomaneioPage> createState() => _RomaneioPageState();
@@ -32,6 +40,42 @@ class _RomaneioPageState extends State<RomaneioPage> {
       widget.codPedido,
       'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
     );
+    _futureRomaneio.then((resposta) {
+      if (mounted) _carregarSelecaoSalva(resposta.itens);
+    });
+  }
+
+  String _chaveSelecao() => 'romaneio_selecao_${widget.codPedido}';
+
+  String _chaveItem(RomaneioModel item) => '${item.codProdutoPai}.${item.codCor}';
+
+  Future<void> _carregarSelecaoSalva(List<RomaneioModel> itens) async {
+    final prefs = await SharedPreferences.getInstance();
+    final salvos = (prefs.getStringList(_chaveSelecao()) ?? []).toSet();
+
+    if (salvos.isEmpty) return;
+
+    setState(() {
+      for (var i = 0; i < itens.length; i++) {
+        if (salvos.contains(_chaveItem(itens[i]))) {
+          _checkedItems[i] = true;
+        }
+      }
+    });
+  }
+
+  Future<void> _salvarSelecao(List<RomaneioModel> itens) async {
+    final prefs = await SharedPreferences.getInstance();
+    final chavesSelecionadas = <String>[
+      for (final entry in _checkedItems.entries)
+        if (entry.value && entry.key < itens.length) _chaveItem(itens[entry.key]),
+    ];
+    await prefs.setStringList(_chaveSelecao(), chavesSelecionadas);
+  }
+
+  Future<void> _limparSelecaoSalva() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_chaveSelecao());
   }
 
   @override
@@ -114,102 +158,67 @@ class _RomaneioPageState extends State<RomaneioPage> {
           ],
         ),
         actions: [
-          ElevatedButton(
-            onPressed: () async {
-              // final vaiTerAcessorio = await showDialog<bool>(
-              //   context: context,
-              //   barrierDismissible: false,
-              //   builder: (context) => AlertDialog(
-              //     title: const Text('Confirmar finalização'),
-              //     content: const Text(
-              //       'Vai ter acessório?',
-              //       style: TextStyle(fontSize: 21),
-              //     ),
-              //     actions: [
-              //       TextButton(
-              //         onPressed: () => Navigator.pop(context, false),
-              //         style: ElevatedButton.styleFrom(
-              //           backgroundColor: Color(0xFFAC0000),
-              //           shape: RoundedRectangleBorder(
-              //             borderRadius: BorderRadius.circular(8),
-              //           ),
-              //         ),
-              //         child: const Text(
-              //           'Não',
-              //           style: TextStyle(color: Color(0xFFFFFFFF)),
-              //         ),
-              //       ),
-              //       ElevatedButton(
-              //         onPressed: () => Navigator.pop(context, true),
-              //         style: ElevatedButton.styleFrom(
-              //           backgroundColor: Color(0xFF0043AC),
-              //           shape: RoundedRectangleBorder(
-              //             borderRadius: BorderRadius.circular(8),
-              //           ),
-              //         ),
-              //         child: const Text(
-              //           'Sim',
-              //           style: TextStyle(color: Color(0xFFFFFFFF)),
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // );
+          if (widget.somenteLeitura)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Chip(
+                label: const Text(
+                  'Visualização',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                backgroundColor: const Color(0xFF9E9E9E),
+                avatar: const Icon(
+                  Icons.visibility,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            )
+          else
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final resposta = await _futureRomaneio;
+                  final itens = resposta.itens;
 
-              // if (vaiTerAcessorio == null) return;
+                  final itensParaCorte = itens.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
 
-              // try {
-              //   List<Map<String, dynamic>>? itensParaCorte;
+                    return {
+                      'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
+                      'cor': item.codCor,
+                      'qtd': item.qtdPedida,
+                      'unidade': _formatarTotal(index) == 'KIT' ? 'KIT' : 'KG',
+                    };
+                  }).toList();
 
-              //   if (vaiTerAcessorio) {
-              //     final resposta = await _futureRomaneio;
-              //     final itens = resposta.itens;
-
-              //     itensParaCorte = itens.asMap().entries.map((entry) {
-              //       final index = entry.key;
-              //       final item = entry.value;
-              //       final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
-
-              //       return {
-              //         'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
-              //         'cor': item.codCor,
-              //         'qtd': item.qtdPedida,
-              //         'unidade': _formatarTotal(index) == 'KIT' ? 'KIT' : 'KG',
-              //       };
-              //     }).toList();
-              //   }
-
-              //   await _api.finalizarPedidoT(
-              //     widget.codPedido,
-              //     itens: itensParaCorte,
-              //   );
-              //   if (!mounted) return;
-              //   Navigator.pop(context, widget.codPedido);
-              // } catch (e) {
-              //   if (!mounted) return;
-              //   ScaffoldMessenger.of(context).showSnackBar(
-              //     SnackBar(content: Text('Erro ao finalizar pedido: $e')),
-              //   );
-              // }
-
-              await _api.finalizarPedidoT(
-                widget.codPedido,
-                // itens: itensParaCorte,
-              );
-              if (!mounted) return;
-              Navigator.pop(context, widget.codPedido);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF0043AC),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                  await _api.finalizarPedidoT(
+                    widget.nameOperador ?? '',
+                    widget.codPedido,
+                    itens: itensParaCorte,
+                  );
+                  if (!mounted) return;
+                  Navigator.pop(context, widget.codPedido);
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro ao finalizar pedido: $e')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF0043AC),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Finalizar Pedido',
+                style: TextStyle(color: Color(0xFFFFFFFF)),
               ),
             ),
-            child: const Text(
-              'Finalizar Pedido',
-              style: TextStyle(color: Color(0xFFFFFFFF)),
-            ),
-          ),
         ],
       ),
       body: FutureBuilder<PaginatedResponseRomaneio<RomaneioModel>>(
@@ -292,7 +301,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
                           Container(height: 1, color: _borderColor),
                       itemBuilder: (context, index) {
                         final item = itens[index];
-                        // final isEven = index % 2 == 0;
                         final quantidadeDividida = item.qtdPedida / 15;
 
                         final isChecked = _checkedItems[index] ?? false;
@@ -325,9 +333,8 @@ class _RomaneioPageState extends State<RomaneioPage> {
                               _verticalDividerRow(),
                               _dataCellPecas(
                                 quantidadeDividida.toStringAsFixed(0),
-                                flex: 1,
+                                flex: 2,
                                 center: true,
-                                // muted: item.localNatureza == null,
                               ),
                               _verticalDividerRow(),
                               _dataCell(
@@ -337,38 +344,24 @@ class _RomaneioPageState extends State<RomaneioPage> {
                                 bold: true,
                               ),
                               _verticalDividerRow(),
-                              Checkbox(
-                                value: isChecked,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _checkedItems[index] = value ?? false;
-                                  });
-                                },
-                              ),
+                              if (!widget.somenteLeitura)
+                                Checkbox(
+                                  value: isChecked,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _checkedItems[index] = value ?? false;
+                                    });
+                                    _salvarSelecao(itens);
+                                  },
+                                )
+                              else
+                                const SizedBox(width: 28),
                             ],
                           ),
                         );
                       },
                     ),
                   ),
-                  // ElevatedButton(
-                  //   onPressed: () {
-                  //     Navigator.push(
-                  //       context,
-                  //       MaterialPageRoute(builder: (context) => HomePage()),
-                  //     );
-                  //   },
-                  //   style: ElevatedButton.styleFrom(
-                  //     backgroundColor: Color(0xFF0043AC),
-                  //     shape: RoundedRectangleBorder(
-                  //       borderRadius: BorderRadius.circular(8),
-                  //     ),
-                  //   ),
-                  //   child: const Text(
-                  //     'Finalizar Pedido',
-                  //     style: TextStyle(color: Color(0xFFFFFFFF)),
-                  //   ),
-                  // ),
                 ],
               ),
             ),
@@ -421,7 +414,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
               ? TextAlign.right
               : TextAlign.left,
           style: TextStyle(
-            fontSize: isCode ? 12 : 13,
+            fontSize: isCode ? 11 : 12,
             fontFamily: isCode ? 'monospace' : null,
             fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
             color: muted ? const Color(0xFFADB5BD) : const Color(0xFF212529),
