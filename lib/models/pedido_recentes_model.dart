@@ -29,6 +29,7 @@ class PedidoRecenteModel {
   final String situacao;
   final double valorTotalOriginal;
   final int? codEtapa; // 3 = Separacao, 4 = Bipagem, null = sem itens ainda
+  final bool finalizadoLocalmente; // vem pronto do backend agora
 
   const PedidoRecenteModel({
     required this.codPedido,
@@ -40,14 +41,15 @@ class PedidoRecenteModel {
     required this.situacao,
     required this.valorTotalOriginal,
     required this.codEtapa,
+    required this.finalizadoLocalmente,
   });
 
-  bool get finalizadoLocalmente => situacao == situacaoConcluidoLocal;
-  int get codEtapaOuPadrao => codEtapa ?? 0;
+  int get codEtapaExibicao =>
+      finalizadoLocalmente ? etapaRomaneioConcluidoLocal : (codEtapa ?? 0);
 
   bool get precisaDeRomaneio => situacao == 'Digitado' && codEtapa == 3;
 
-   static Color corPorEtapa(int? codEtapa) {
+  static Color corPorEtapa(int? codEtapa) {
     switch (codEtapa) {
       case 3:
         return const Color(0xFF9E9E9E); // Separacao
@@ -58,7 +60,9 @@ class PedidoRecenteModel {
       case 9:
         return const Color(0xFF3d7d24); // Concluido (de verdade, na API)
       case etapaRomaneioConcluidoLocal:
-        return const Color(0xFF3d7d24); // Concluido localmente (mesmo azul do botao Finalizar)
+        return const Color(
+          0xFF3d7d24,
+        ); // Concluido localmente (mesmo azul do botao Finalizar)
       default:
         return const Color(0xFF9E9E9E);
     }
@@ -75,6 +79,7 @@ class PedidoRecenteModel {
       situacao: json['situacao'] as String? ?? '',
       valorTotalOriginal: (json['valorTotalOriginal'] as num?)?.toDouble() ?? 0,
       codEtapa: json['codEtapa'] as int?,
+      finalizadoLocalmente: json['finalizadoLocalmente'] as bool? ?? false,
     );
   }
 
@@ -89,6 +94,7 @@ class PedidoRecenteModel {
       situacao: situacao ?? this.situacao,
       valorTotalOriginal: valorTotalOriginal,
       codEtapa: codEtapa ?? this.codEtapa,
+      finalizadoLocalmente: finalizadoLocalmente,
     );
   }
 }

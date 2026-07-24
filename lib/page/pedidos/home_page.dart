@@ -197,7 +197,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         InfoColumn(
                           label: 'Checkout',
-                          value: _pedidoSelecionado!.codEtapa == 4
+                          value: _pedidoSelecionado!.codEtapaExibicao == 4
                               ? 'Em processo'
                               : '',
                           valueStyle: const TextStyle(
@@ -238,9 +238,9 @@ class _HomePageState extends State<HomePage> {
                               ),
                               EtapaColumn(
                                 color: PedidoRecenteModel.corPorEtapa(
-                                  _pedidoSelecionado!.codEtapa,
+                                  _pedidoSelecionado!.codEtapaExibicao,
                                 ),
-                                codEtapa: _pedidoSelecionado!.codEtapa!,
+                                codEtapa: _pedidoSelecionado!.codEtapaExibicao,
                               ),
                             ],
                           ),
@@ -248,8 +248,8 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                  if (_pedidoSelecionado!.codEtapa == 4 ||
-                      _pedidoSelecionado!.codEtapa == 3)
+                  if (_pedidoSelecionado!.codEtapaExibicao == 4 ||
+                      _pedidoSelecionado!.codEtapaExibicao == 3)
                     Column(
                       children: [
                         ListTile(
@@ -347,7 +347,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     )
-                  else if (_pedidoSelecionado!.codEtapa ==
+                  else if (_pedidoSelecionado!.codEtapaExibicao ==
                       PedidoRecenteModel.etapaRomaneioConcluidoLocal)
                     ListTile(
                       title: ElevatedButton.icon(

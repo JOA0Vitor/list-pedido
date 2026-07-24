@@ -1,9 +1,12 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:pedidosdp/page/corte/corte_industrial.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../service/api_service.dart';
 
@@ -27,27 +30,41 @@ class _RomaneioPageState extends State<RomaneioPage> {
   late final ApiService _api;
   late Future<PaginatedResponseRomaneio<RomaneioModel>> _futureRomaneio;
   final Map<int, bool> _checkedItems = {};
+  WebSocketChannel? _canal;
+  static const String _servidor = '192.168.0.36:8000';
+  static const String _apiKey =
+      'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w';
 
   @override
   void initState() {
     super.initState();
-    _api = ApiService(
-      apiToken:
-          'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
-    );
-    _futureRomaneio = _api.getRomaneio(
-      2,
-      widget.codPedido,
-      'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
-    );
+    _api = ApiService(apiToken: _apiKey);
+    _futureRomaneio = _api.getRomaneio(2, widget.codPedido, _apiKey);
     _futureRomaneio.then((resposta) {
       if (mounted) _carregarSelecaoSalva(resposta.itens);
     });
+    _conectarWebSocket();
   }
 
   String _chaveSelecao() => 'romaneio_selecao_${widget.codPedido}';
 
-  String _chaveItem(RomaneioModel item) => '${item.codProdutoPai}.${item.codCor}';
+  String _chaveItem(RomaneioModel item) =>
+      '${item.codProdutoPai}.${item.codCor}';
+
+  Future<void> _carregarSelecaoDoServidor(List<RomaneioModel> itens) async {
+    try {
+      final resposta = await _api.buscarSelecaoRomaneio(widget.codPedido);
+      final chavesSalvas = resposta.toSet();
+
+      setState(() {
+        for (var i = 0; i < itens.length; i++) {
+          _checkedItems[i] = chavesSalvas.contains(_chaveItem(itens[i]));
+        }
+      });
+    } catch (e) {
+      debugPrint('Erro ao carregar seleção do romaneio: $e');
+    }
+  }
 
   Future<void> _carregarSelecaoSalva(List<RomaneioModel> itens) async {
     final prefs = await SharedPreferences.getInstance();
@@ -64,11 +81,37 @@ class _RomaneioPageState extends State<RomaneioPage> {
     });
   }
 
+  void _conectarWebSocket() {
+    final uri = Uri.parse(
+      'ws://$_servidor/romaneio/${widget.codPedido}/ws?api_key=$_apiKey',
+    );
+    _canal = WebSocketChannel.connect(uri);
+
+    _canal!.stream.listen((mensagem) async {
+      final dados = jsonDecode(mensagem as String) as Map<String, dynamic>;
+      if (dados['tipo'] == 'selecao_atualizada') {
+        final chavesAtualizadas = (dados['itens'] as List)
+            .cast<String>()
+            .toSet();
+        final resposta = await _futureRomaneio;
+        if (!mounted) return;
+        setState(() {
+          for (var i = 0; i < resposta.itens.length; i++) {
+            _checkedItems[i] = chavesAtualizadas.contains(
+              _chaveItem(resposta.itens[i]),
+            );
+          }
+        });
+      }
+    }, onError: (e) => debugPrint('Erro no WebSocket do romaneio: $e'));
+  }
+
   Future<void> _salvarSelecao(List<RomaneioModel> itens) async {
     final prefs = await SharedPreferences.getInstance();
     final chavesSelecionadas = <String>[
       for (final entry in _checkedItems.entries)
-        if (entry.value && entry.key < itens.length) _chaveItem(itens[entry.key]),
+        if (entry.value && entry.key < itens.length)
+          _chaveItem(itens[entry.key]),
     ];
     await prefs.setStringList(_chaveSelecao(), chavesSelecionadas);
   }
@@ -302,8 +345,8 @@ class _RomaneioPageState extends State<RomaneioPage> {
                       itemBuilder: (context, index) {
                         final item = itens[index];
                         final quantidadeDividida = item.qtdPedida / 15;
-
                         final isChecked = _checkedItems[index] ?? false;
+
 
                         final backgroundColor = isChecked
                             ? const Color.fromARGB(255, 164, 255, 151)

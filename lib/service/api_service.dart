@@ -224,26 +224,26 @@ class ApiService {
   // }
 
   Future<void> finalizarPedidoT(
-  String? operador,
-  String codPedido, {
-  List<Map<String, dynamic>>? itens,
-}) async {
-  final response = await http.post(
-    Uri.parse('$_baseUrlRomaneio/pedidos/$codPedido/finalizar').replace(
-      queryParameters: {
-        if (operador != null && operador.isNotEmpty) 'operador': operador,
-      },
-    ),
-    headers: {'X-API-Key': apiToken, 'Content-Type': 'application/json'},
-    body: jsonEncode({'itens': itens ?? []}),
-  );
-
-  if (response.statusCode != 200) {
-    throw Exception(
-      'Falha ao finalizar pedido: ${response.statusCode} - ${response.body}',
+    String? operador,
+    String codPedido, {
+    List<Map<String, dynamic>>? itens,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrlRomaneio/pedidos/$codPedido/finalizar').replace(
+        queryParameters: {
+          if (operador != null && operador.isNotEmpty) 'operador': operador,
+        },
+      ),
+      headers: {'X-API-Key': apiToken, 'Content-Type': 'application/json'},
+      body: jsonEncode({'itens': itens ?? []}),
     );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Falha ao finalizar pedido: ${response.statusCode} - ${response.body}',
+      );
+    }
   }
-}
 
   Future<PaginatedResponseCorte<CorteModel>> getFilaCorte() async {
     final uri = Uri.parse('$_baseUrlRomaneio/corte/fila');
@@ -289,6 +289,32 @@ class ApiService {
 
     return RespostaPedidosRecentes.fromJson(jsonDecode(response.body));
   }
+
+  Future<List<String>> buscarSelecaoRomaneio(String codPedido) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/romaneio/$codPedido/selecao');
+    final response = await _client.get(uri, headers: {'x-api-key': apiToken});
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao buscar seleção: ${response.statusCode}');
+    }
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return (json['itens'] as List).cast<String>();
+  }
+
+  Future<void> salvarSelecaoRomaneio(
+    String codPedido,
+    List<String> itens,
+  ) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/romaneio/$codPedido/selecao');
+    final response = await _client.post(
+      uri,
+      headers: {'x-api-key': apiToken, 'Content-Type': 'application/json'},
+      body: jsonEncode({'itens': itens}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao salvar seleção: ${response.statusCode}');
+    }
+  }
+
 
   void dispose() {
     _client.close();

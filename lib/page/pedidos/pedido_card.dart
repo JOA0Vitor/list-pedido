@@ -65,12 +65,12 @@ class PedidoCard extends StatelessWidget {
             Expanded(
               flex: 5,
               child: EtapaColumn(
-                color: PedidoRecenteModel.corPorEtapa(pedido.codEtapa),
-                codEtapa: pedido.codEtapa!,
+                color: PedidoRecenteModel.corPorEtapa(pedido.codEtapaExibicao),
+                codEtapa: pedido.codEtapaExibicao,
               ),
             ),
             const SizedBox(width: 10),
-            _AcoesRow(codEtapa: pedido.codEtapa!),
+            _AcoesRow(codEtapa: pedido.codEtapaExibicao),
           ],
         ),
       ),

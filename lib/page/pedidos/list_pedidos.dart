@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/pedido_recentes_model.dart';
-import 'package:pedidosdp/models/pedidos_model.dart';
 import 'package:pedidosdp/page/pedidos/pedido_card.dart';
 
 class PedidosScreen extends StatelessWidget {
