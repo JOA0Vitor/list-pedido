@@ -128,7 +128,6 @@ class EtapaColumn extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 codEtapa == 1 ? 'A FAZER' : 'FINALIZADO PACIALMENTE',
-                // etapa.toUpperCase(),
                 style: TextStyle(
                   color: codEtapa == 1 ? Color(0xFFFE8D00) : Color(0xFF3d7d24),
                   fontWeight: FontWeight.bold,

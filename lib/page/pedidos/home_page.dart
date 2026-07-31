@@ -27,9 +27,10 @@ class _HomePageState extends State<HomePage> {
   final _localStore = PedidosLocalStore();
 
   late final ApiService apiService;
-  late Future<List<PedidoRecenteModel>> _futurePedidos;
 
   List<PedidoRecenteModel> _todosPedidos = [];
+  bool _carregando = true;
+  String? _erro;
   PedidoRecenteModel? _pedidoSelecionado;
   String? _operadorSelecionado;
   Timer? _timer;
@@ -64,7 +65,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     final pendentes = resposta.pedidos
-        .where((p) => p.precisaDeRomaneio)
+        .where((p) => p.apareceNaLista)
         .toList();
 
     final codigosAtivos = pendentes.map((p) => p.codPedido).toSet();
@@ -75,7 +76,24 @@ class _HomePageState extends State<HomePage> {
 
   void _buscarPedidos() {
     setState(() {
-      _futurePedidos = _buscarPedidosParaExibir();
+      _carregando = true;
+      _erro = null;
+    });
+
+    final future = _buscarPedidosParaExibir();
+
+    future.then((pedidos) {
+      if (!mounted) return;
+      setState(() {
+        _todosPedidos = pedidos;
+        _carregando = false;
+      });
+    }).catchError((e) {
+      if (!mounted) return;
+      setState(() {
+        _erro = e.toString();
+        _carregando = false;
+      });
     });
   }
 
@@ -103,6 +121,25 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       debugPrint('Erro ao verificar novos pedidos: $e');
     }
+  }
+
+  Future<void> _marcarPedidoFinalizadoLocalmente(String codPedido) async {
+    await _localStore.marcarFinalizado(codPedido);
+
+    setState(() {
+      _todosPedidos = _todosPedidos.map((p) {
+        if (p.codPedido != codPedido) return p;
+        return p.copyWith(
+          codEtapa: PedidoRecenteModel.etapaRomaneioConcluidoLocal,
+        );
+      }).toList();
+
+      if (_pedidoSelecionado?.codPedido == codPedido) {
+        _pedidoSelecionado = _pedidoSelecionado!.copyWith(
+          codEtapa: PedidoRecenteModel.etapaRomaneioConcluidoLocal,
+        );
+      }
+    });
   }
 
   @override
@@ -238,9 +275,9 @@ class _HomePageState extends State<HomePage> {
                               ),
                               EtapaColumn(
                                 color: PedidoRecenteModel.corPorEtapa(
-                                  _pedidoSelecionado!.codEtapaExibicao,
+                                  _pedidoSelecionado!.codEtapaExibicao!,
                                 ),
-                                codEtapa: _pedidoSelecionado!.codEtapaExibicao,
+                                codEtapa: _pedidoSelecionado!.codEtapaExibicao!
                               ),
                             ],
                           ),
@@ -248,8 +285,7 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                  if (_pedidoSelecionado!.codEtapaExibicao == 4 ||
-                      _pedidoSelecionado!.codEtapaExibicao == 3)
+                  if (_pedidoSelecionado!.codEtapaExibicao == 4)
                     Column(
                       children: [
                         ListTile(
@@ -313,16 +349,9 @@ class _HomePageState extends State<HomePage> {
 
                                     if (codPedidoFinalizado != null &&
                                         mounted) {
-                                      await _localStore.marcarFinalizado(
-                                        _pedidoSelecionado!.codPedido,
+                                      await _marcarPedidoFinalizadoLocalmente(
+                                        codPedidoFinalizado,
                                       );
-                                      setState(() {
-                                        _pedidoSelecionado = _pedidoSelecionado!
-                                            .copyWith(
-                                              codEtapa: PedidoRecenteModel
-                                                  .etapaRomaneioConcluidoLocal,
-                                            );
-                                      });
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
@@ -358,12 +387,14 @@ class _HomePageState extends State<HomePage> {
                               builder: (context) => RomaneioPage(
                                 codPedido: _pedidoSelecionado!.codPedido,
                                 somenteLeitura: true,
-                                // nameOperador: _operadorSelecionado,
                               ),
                             ),
                           );
                         },
-                        icon: const Icon(Icons.visibility_outlined, color: Colors.white),
+                        icon: const Icon(
+                          Icons.visibility_outlined,
+                          color: Colors.white,
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0043AC),
                           shape: RoundedRectangleBorder(
@@ -483,18 +514,17 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async => _buscarPedidos(),
-                child: FutureBuilder<List<PedidoRecenteModel>>(
-                  future: _futurePedidos,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                child: Builder(
+                  builder: (context) {
+                    if (_carregando) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    if (snapshot.hasError) {
+                    if (_erro != null) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('Erro: ${snapshot.error}'),
+                            Text('Erro: $_erro'),
                             const SizedBox(height: 12),
                             ElevatedButton(
                               onPressed: _buscarPedidos,
@@ -504,8 +534,6 @@ class _HomePageState extends State<HomePage> {
                         ),
                       );
                     }
-
-                    _todosPedidos = snapshot.data ?? [];
 
                     if (_todosPedidos.isEmpty) {
                       return const Center(

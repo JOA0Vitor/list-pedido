@@ -16,8 +16,6 @@ class CorteIndustrial extends StatefulWidget {
 }
 
 class _CorteIndustrialState extends State<CorteIndustrial> {
-  // late final ApiService _api;
-  //9616
   late Future<PaginatedResponseCorte<CorteModel>> _futureCorte;
 
   final Map<int, TipoGola> _tipoGolaPorItem = {};
@@ -83,11 +81,10 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
     final hexLimpo = hex.replaceAll('#', '').trim();
 
     try {
-      // Aceita "RRGGBB" (6 dígitos) ou já "AARRGGBB" (8 dígitos) se algum dia vier com alpha
       final hexCompleto = hexLimpo.length == 6 ? 'FF$hexLimpo' : hexLimpo;
       return Color(int.parse(hexCompleto, radix: 16));
     } catch (_) {
-      return corPadrao; // hex inválido -> não quebra a tela, só usa a cor padrão
+      return corPadrao;
     }
   }
 
@@ -201,10 +198,49 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
           ],
         ),
         actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.info_outline, color: Color(0xFF0043AC)),
+          ElevatedButton(
+            onPressed: () async {
+              setState(() => _finalizando = true);
+              try {
+                final itens = _montarResumoParaPdf();
+                final pdfBytes = await corterResumoPdf.gerarPdfPedido(
+                  codPedido: widget.codPedido,
+                  itens: itens,
+                );
+          
+                await Printing.sharePdf(
+                  bytes: pdfBytes,
+                  filename: 'pedido_${widget.codPedido}.pdf',
+                );
+              } finally {
+                setState(() => _finalizando = false);
+              }
+            },
+             style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF0043AC),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            child: _finalizando
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text(
+                    'Finalizar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
+          SizedBox(width: 16),
         ],
       ),
       body: Stack(
@@ -336,33 +372,6 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
                                       flex: 1,
                                       isCode: true,
                                     ),
-                                    // _verticalDividerRow(),//deixar como comentário por
-                                    // tipoGolaAtual == TipoGola.gola
-                                    //     ? Expanded(
-                                    //         flex: 1,
-                                    //         child: Container(
-                                    //           width: 50,
-                                    //           height: 30,
-                                    //           padding:
-                                    //               const EdgeInsets.symmetric(
-                                    //                 horizontal: 8,
-                                    //                 vertical: 4,
-                                    //               ),
-                                    //           decoration: BoxDecoration(
-                                    //             color: corDoHex(
-                                    //               item.corHex,
-                                    //             ), // antes: Color(0xFF0043AC)
-                                    //             borderRadius:
-                                    //                 BorderRadius.circular(8),
-                                    //           ),
-                                    //         ),
-                                    //       )
-                                    //     : _dataCell(
-                                    //         item.corHex ?? '-',
-                                    //         flex: 1,
-                                    //         center: true,
-                                    //         bold: true,
-                                    //       ),
                                     _verticalDividerRow(),
                                     _dataCellPecas(
                                       '${item.peso ?? 0}KG',
@@ -476,63 +485,54 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
             ),
           ),
           SizedBox(height: 56),
-          Positioned(
-            left: 40,
-            right: 40,
-            bottom: 6,
-            child: ElevatedButton(
-              onPressed: () async {
-                setState(() => _finalizando = true);
-                try {
-                  final itens =
-                      _montarResumoParaPdf(); // você monta a partir do seu model/controllers
-                  final pdfBytes = await corterResumoPdf.gerarPdfPedido(
-                    codPedido: widget.codPedido,
-                    itens: itens,
-                  );
+          // Positioned(
+          //   left: 40,
+          //   right: 40,
+          //   bottom: 6,
+          //   child: ElevatedButton(
+          //     onPressed: () async {
+          //       setState(() => _finalizando = true);
+          //       try {
+          //         final itens = _montarResumoParaPdf();
+          //         final pdfBytes = await corterResumoPdf.gerarPdfPedido(
+          //           codPedido: widget.codPedido,
+          //           itens: itens,
+          //         );
 
-                  // Opção A: deixar o usuário visualizar/compartilhar/imprimir
-                  await Printing.sharePdf(
-                    bytes: pdfBytes,
-                    filename: 'pedido_${widget.codPedido}.pdf',
-                  );
-
-                  // Opção B: enviar direto pra sua futura API
-                  // final response = await http.post(
-                  //   Uri.parse('https://sua-api.com/pedidos/${widget.codPedido}/finalizar'),
-                  //   headers: {'Content-Type': 'application/pdf'},
-                  //   body: pdfBytes,
-                  // );
-                } finally {
-                  setState(() => _finalizando = false);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0043AC),
-                minimumSize: const Size(double.infinity, 44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: _finalizando
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Finalizar',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-            ),
-          ),
+          //         await Printing.sharePdf(
+          //           bytes: pdfBytes,
+          //           filename: 'pedido_${widget.codPedido}.pdf',
+          //         );
+          //       } finally {
+          //         setState(() => _finalizando = false);
+          //       }
+          //     },
+          //     style: ElevatedButton.styleFrom(
+          //       backgroundColor: const Color(0xFF0043AC),
+          //       minimumSize: const Size(double.infinity, 44),
+          //       shape: RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(8),
+          //       ),
+          //     ),
+          //     child: _finalizando
+          //         ? const SizedBox(
+          //             width: 18,
+          //             height: 18,
+          //             child: CircularProgressIndicator(
+          //               strokeWidth: 2,
+          //               color: Colors.white,
+          //             ),
+          //           )
+          //         : const Text(
+          //             'Finalizar',
+          //             style: TextStyle(
+          //               color: Colors.white,
+          //               fontSize: 18,
+          //               fontWeight: FontWeight.bold,
+          //             ),
+          //           ),
+          //   ),
+          // ),
         ],
       ),
     );

@@ -65,10 +65,7 @@ class PedidosScreen extends StatelessWidget {
 
             // await lockService.travar(pedido.codPedido, usuarioAtual);
 
-            // // abre a tela de detalhe do pedido
-            // // await Navigator.push(...);
 
-            // // quando o usuário voltar da tela de detalhe, libera o pedido
             // await lockService.destravar(pedido.codPedido);
           },
         );

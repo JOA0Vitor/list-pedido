@@ -31,8 +31,6 @@ class InfoColumn extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(value, style: valueStyle),
               ),
-
-        // Text(value, style: valueStyle),
       ],
     );
   }

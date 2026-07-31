@@ -70,28 +70,27 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
     ]);
     _api = ApiService(
       apiToken: 'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
-    ); // mesmo token usado nas outras telas
+    ); 
     _buscarPedidos();
   }
 
   Future<PaginatedResponseCorte<CorteModel>> getFilaCorteMock() async {
-    // Simula o delay de uma chamada de rede real, pra você ver o loading também.
     await Future.delayed(const Duration(milliseconds: 500));
 
     final itensFalsos = [
       CorteModel(
         codPedido: '4481',
-        status: 1, // pendente
+        status: 1, 
         dataEmissao: '2026-07-15',
       ),
       CorteModel(
         codPedido: '4466',
-        status: 1, // pendente
+        status: 1, 
         dataEmissao: '2026-07-14',
       ),
       CorteModel(
         codPedido: '4436',
-        status: 4, // já concluído
+        status: 4,
         dataEmissao: '2026-07-13',
       ),
     ];

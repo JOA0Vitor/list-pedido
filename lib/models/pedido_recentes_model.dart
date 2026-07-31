@@ -28,8 +28,8 @@ class PedidoRecenteModel {
   final String nomeRepresentante;
   final String situacao;
   final double valorTotalOriginal;
-  final int? codEtapa; // 3 = Separacao, 4 = Bipagem, null = sem itens ainda
-  final bool finalizadoLocalmente; // vem pronto do backend agora
+  final int? codEtapa;
+  final bool finalizadoLocalmente;
 
   const PedidoRecenteModel({
     required this.codPedido,
@@ -44,25 +44,22 @@ class PedidoRecenteModel {
     required this.finalizadoLocalmente,
   });
 
-  int get codEtapaExibicao =>
-      finalizadoLocalmente ? etapaRomaneioConcluidoLocal : (codEtapa ?? 0);
+  int? get codEtapaExibicao =>
+      finalizadoLocalmente ? etapaRomaneioConcluidoLocal : codEtapa;
 
-  bool get precisaDeRomaneio => situacao == 'Digitado' && codEtapa == 3;
+  bool get apareceNaLista =>
+      codEtapa == 4 || codEtapa == etapaRomaneioConcluidoLocal;
 
-  static Color corPorEtapa(int? codEtapa) {
+  bool get precisaDeRomaneio => codEtapa == 4;
+
+  static Color corPorEtapa(int codEtapa) {
     switch (codEtapa) {
       case 3:
-        return const Color(0xFF9E9E9E); // Separacao
+        return const Color(0xFFFE8D00);
       case 4:
-        return const Color(0xFFFE8D00); // Bipagem
-      case 5:
-        return const Color(0xFF4e2da2); // Faturamento
-      case 9:
-        return const Color(0xFF3d7d24); // Concluido (de verdade, na API)
+        return const Color(0xFF4CAF50);
       case etapaRomaneioConcluidoLocal:
-        return const Color(
-          0xFF3d7d24,
-        ); // Concluido localmente (mesmo azul do botao Finalizar)
+        return const Color(0xFF0043AC);
       default:
         return const Color(0xFF9E9E9E);
     }

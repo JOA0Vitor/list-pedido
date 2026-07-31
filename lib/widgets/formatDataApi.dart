@@ -5,7 +5,7 @@ class FormatDataApi {
   }
 
   String converterBrParaApi(String dataBr) {
-    final partes = dataBr.split('/'); // [dd, MM, yyyy]
+    final partes = dataBr.split('/'); 
     return '${partes[2]}-${partes[1]}-${partes[0]}';
   }
 

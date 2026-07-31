@@ -13,9 +13,6 @@ class SelecaoPerfilPage extends StatefulWidget {
 }
 
 class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
-  // Senha fixa local, só pra não deixar qualquer um entrar sem querer
-  // na tela de corte. Não é uma senha "de verdade" - é o mesmo nível
-  // de segurança que a API key embutida no app.
   static const String _senhaCorte = '9616';
 
   final _formKey = GlobalKey<FormState>();
@@ -42,7 +39,7 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
       return;
     }
 
-    // Tipo == corte: confere a senha antes de deixar entrar
+
     if (_senhaController.text == _senhaCorte) {
       Navigator.pushReplacement(
         context,
@@ -101,7 +98,6 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
                     },
                   ),
 
-                  // Campo de senha só aparece se escolher "Corte Industrial"
                   if (_tipoSelecionado == TipoUsuario.corte) ...[
                     const SizedBox(height: 16),
                     TextFormField(

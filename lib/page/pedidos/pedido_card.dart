@@ -65,47 +65,18 @@ class PedidoCard extends StatelessWidget {
             Expanded(
               flex: 5,
               child: EtapaColumn(
-                color: PedidoRecenteModel.corPorEtapa(pedido.codEtapaExibicao),
-                codEtapa: pedido.codEtapaExibicao,
+                color: PedidoRecenteModel.corPorEtapa(pedido.codEtapaExibicao!),
+                codEtapa: pedido.codEtapaExibicao!,
               ),
             ),
             const SizedBox(width: 10),
-            _AcoesRow(codEtapa: pedido.codEtapaExibicao),
+            _AcoesRow(codEtapa: pedido.codEtapaExibicao!),
           ],
         ),
       ),
     );
   }
 }
-// class InfoColumn extends StatelessWidget {
-//   final String label;
-//   final String value;
-//   final TextStyle valueStyle;
-
-//   const InfoColumn({
-//     required this.label,
-//     required this.value,
-//     required this.valueStyle,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(
-//           label,
-//           style: const TextStyle(
-//             color: Color(0xFF677383),
-//             fontWeight: FontWeight.w500,
-//             fontSize: 14,
-//           ),
-//         ),
-//         Text(value, style: valueStyle),
-//       ],
-//     );
-//   }
-// }
 
 class _AcoesRow extends StatelessWidget {
   final int codEtapa;
@@ -114,9 +85,7 @@ class _AcoesRow extends StatelessWidget {
  
   @override
   Widget build(BuildContext context) {
-    // So mostra o icone de status quando ja saiu de "Separacao" (3) --
-    // ou seja, ja comecou a bipar (4) ou ja foi finalizado localmente (10).
-    final mostrarIcone = codEtapa != 3;
+    final mostrarIcone = codEtapa != 4;
     final concluidoLocalmente =
         codEtapa == PedidoRecenteModel.etapaRomaneioConcluidoLocal;
  

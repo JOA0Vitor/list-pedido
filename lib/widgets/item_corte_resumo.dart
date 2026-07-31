@@ -64,21 +64,3 @@ class CorteResumoPdf {
     return pdf.save();
   }
 }
-/* 
- String _formatarPesoComPonto(double valor) {
-    final inteiro = valor.round();
-    final str = inteiro.toString();
-    final digitos = str.length;
-
-    // Menos de 4 dígitos: sem ponto, mostra como está
-    if (digitos <= 3) {
-      return str;
-    }
-
-    final posicaoPonto = digitos - 3;
-    final parteInteira = str.substring(0, posicaoPonto);
-    final parteDecimal = str.substring(posicaoPonto);
-
-    return '$parteInteira.$parteDecimal';
-  }
- */

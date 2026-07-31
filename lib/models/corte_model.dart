@@ -21,7 +21,7 @@ class CorteModel {
   final String codPedido;
   final String? codProdutoPai;
   final String? codCor;
-  final String? corHex; //vou se coloco no modelo
+  final String? corHex; //vou colocor no layout
   final int? peso;
   final int status;
   final String dataEmissao;

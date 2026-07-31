@@ -30,7 +30,9 @@ class _RomaneioPageState extends State<RomaneioPage> {
   late final ApiService _api;
   late Future<PaginatedResponseRomaneio<RomaneioModel>> _futureRomaneio;
   final Map<int, bool> _checkedItems = {};
+  final Map<String, List<String>> _gavetasManuais = {};
   WebSocketChannel? _canal;
+  bool _finalizando = false;
   static const String _servidor = '192.168.0.36:8000';
   static const String _apiKey =
       'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w';
@@ -40,8 +42,14 @@ class _RomaneioPageState extends State<RomaneioPage> {
     super.initState();
     _api = ApiService(apiToken: _apiKey);
     _futureRomaneio = _api.getRomaneio(2, widget.codPedido, _apiKey);
+    // _futureRomaneio.then((resposta) {
+    //   if (mounted) _carregarSelecaoSalva(resposta.itens);
+    // });
     _futureRomaneio.then((resposta) {
-      if (mounted) _carregarSelecaoSalva(resposta.itens);
+      if (mounted) {
+        _carregarSelecaoDoServidor(resposta.itens);
+        _carregarGavetasManuais(resposta.itens);
+      }
     });
     _conectarWebSocket();
   }
@@ -49,7 +57,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
   String _chaveSelecao() => 'romaneio_selecao_${widget.codPedido}';
 
   String _chaveItem(RomaneioModel item) =>
-      '${item.codProdutoPai}.${item.codCor}';
+      '${item.codProdutoPai ?? item.codProduto}.${item.codCor ?? item.codProduto}';
 
   Future<void> _carregarSelecaoDoServidor(List<RomaneioModel> itens) async {
     try {
@@ -66,19 +74,28 @@ class _RomaneioPageState extends State<RomaneioPage> {
     }
   }
 
-  Future<void> _carregarSelecaoSalva(List<RomaneioModel> itens) async {
+  // Future<void> _carregarSelecaoSalva(List<RomaneioModel> itens) async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final salvos = (prefs.getStringList(_chaveSelecao()) ?? []).toSet();
+
+  //   if (salvos.isEmpty) return;
+
+  //   setState(() {
+  //     for (var i = 0; i < itens.length; i++) {
+  //       if (salvos.contains(_chaveItem(itens[i]))) {
+  //         _checkedItems[i] = true;
+  //       }
+  //     }
+  //   });
+  // }
+  Future<void> _salvarSelecao(List<RomaneioModel> itens) async {
     final prefs = await SharedPreferences.getInstance();
-    final salvos = (prefs.getStringList(_chaveSelecao()) ?? []).toSet();
-
-    if (salvos.isEmpty) return;
-
-    setState(() {
-      for (var i = 0; i < itens.length; i++) {
-        if (salvos.contains(_chaveItem(itens[i]))) {
-          _checkedItems[i] = true;
-        }
-      }
-    });
+    final chavesSelecionadas = <String>[
+      for (final entry in _checkedItems.entries)
+        if (entry.value && entry.key < itens.length)
+          _chaveItem(itens[entry.key]),
+    ];
+    await prefs.setStringList(_chaveSelecao(), chavesSelecionadas);
   }
 
   void _conectarWebSocket() {
@@ -106,27 +123,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
     }, onError: (e) => debugPrint('Erro no WebSocket do romaneio: $e'));
   }
 
-  Future<void> _salvarSelecao(List<RomaneioModel> itens) async {
-    final prefs = await SharedPreferences.getInstance();
-    final chavesSelecionadas = <String>[
-      for (final entry in _checkedItems.entries)
-        if (entry.value && entry.key < itens.length)
-          _chaveItem(itens[entry.key]),
-    ];
-    await prefs.setStringList(_chaveSelecao(), chavesSelecionadas);
-  }
-
-  Future<void> _limparSelecaoSalva() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_chaveSelecao());
-  }
-
-  @override
-  void dispose() {
-    _api.dispose();
-    super.dispose();
-  }
-
   static const Color _borderColor = Color(0xFFDEE2E6);
   static const double _borderWidth = 1.0;
 
@@ -144,7 +140,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
     if (tipoGola == TipoGola.gola) {
       return '${total.toStringAsFixed(0)}KIT';
     }
-    return '${_formatarPesoComPonto(total)}KG';
+    return '${_formatarPesoComPonto(total)}G';
   }
 
   TextEditingController _controllerCamisas(int index) {
@@ -185,6 +181,72 @@ class _RomaneioPageState extends State<RomaneioPage> {
     return '${str.substring(0, posicaoPonto)}.${str.substring(posicaoPonto)}';
   }
 
+  Future<void> _abrirDialogoAdicionarGaveta(RomaneioModel item) async {
+    final controller = TextEditingController();
+    final chave = _chaveItem(item);
+
+    final gaveta = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Adicionar gaveta'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'ex: e.116.1'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+
+    if (gaveta == null || gaveta.isEmpty || !mounted) return;
+
+    try {
+      final gavetas = await _api.adicionarGaveta(chave, gaveta);
+      setState(() => _gavetasManuais[chave] = gavetas);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao adicionar gaveta: $e')));
+    }
+  }
+
+  Future<void> _carregarGavetasManuais(List<RomaneioModel> itens) async {
+    final chaves = itens.map(_chaveItem).toSet();
+
+    final resultados = await Future.wait(
+      chaves.map((chave) async {
+        try {
+          final gavetas = await _api.buscarGavetas(chave);
+          return MapEntry(chave, gavetas);
+        } catch (e) {
+          debugPrint('Erro ao buscar gavetas de $chave: $e');
+          return MapEntry(chave, <String>[]);
+        }
+      }),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _gavetasManuais.addEntries(resultados);
+    });
+  }
+
+  @override
+  void dispose() {
+    _api.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -196,7 +258,13 @@ class _RomaneioPageState extends State<RomaneioPage> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const Spacer(),
-            Text('Pedido ${widget.codPedido}'),
+            Text(
+              'Pedido ${widget.codPedido}',
+              style: const TextStyle(
+                color: Color.fromARGB(137, 17, 79, 212),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const Spacer(),
           ],
         ),
@@ -219,48 +287,68 @@ class _RomaneioPageState extends State<RomaneioPage> {
             )
           else
             ElevatedButton(
-              onPressed: () async {
-                try {
-                  final resposta = await _futureRomaneio;
-                  final itens = resposta.itens;
+              onPressed: _finalizando
+                  ? null
+                  : () async {
+                      setState(() => _finalizando = true);
+                      try {
+                        final resposta = await _futureRomaneio;
+                        final itens = resposta.itens;
 
-                  final itensParaCorte = itens.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-                    final tipoGola = _tipoGolaPorItem[index] ?? TipoGola.gola;
+                        final itensParaCorte = itens.asMap().entries.map((
+                          entry,
+                        ) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          final tipoGola =
+                              _tipoGolaPorItem[index] ?? TipoGola.gola;
 
-                    return {
-                      'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
-                      'cor': item.codCor,
-                      'qtd': item.qtdPedida,
-                      'unidade': _formatarTotal(index) == 'KIT' ? 'KIT' : 'KG',
-                    };
-                  }).toList();
+                          return {
+                            'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
+                            'cor': item.codCor,
+                            'qtd': item.qtdPedida,
+                            'unidade': _formatarTotal(index) == 'KIT'
+                                ? 'KIT'
+                                : 'KG',
+                          };
+                        }).toList();
 
-                  await _api.finalizarPedidoT(
-                    widget.nameOperador ?? '',
-                    widget.codPedido,
-                    itens: itensParaCorte,
-                  );
-                  if (!mounted) return;
-                  Navigator.pop(context, widget.codPedido);
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erro ao finalizar pedido: $e')),
-                  );
-                }
-              },
+                        await _api.finalizarPedidoT(
+                          widget.nameOperador ?? '',
+                          widget.codPedido,
+                          itens: itensParaCorte,
+                        );
+                        if (!mounted) return;
+                        Navigator.pop(context, widget.codPedido);
+                      } catch (e) {
+                        if (!mounted) return;
+                        setState(() => _finalizando = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erro ao finalizar pedido: $e'),
+                          ),
+                        );
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF0043AC),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                'Finalizar Pedido',
-                style: TextStyle(color: Color(0xFFFFFFFF)),
-              ),
+              child: _finalizando
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Finalizar Pedido',
+                      style: TextStyle(color: Color(0xFFFFFFFF)),
+                    ),
             ),
         ],
       ),
@@ -269,7 +357,20 @@ class _RomaneioPageState extends State<RomaneioPage> {
 
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF0043AC)),
+                  SizedBox(height: 12),
+                  Text(
+                    'Carregando itens...',
+                    style: TextStyle(color: Colors.black, fontSize: 16),
+                  ),
+                ],
+              ),
+            );
           }
           if (snapshot.hasError) {
             return Center(
@@ -311,6 +412,11 @@ class _RomaneioPageState extends State<RomaneioPage> {
               child: Column(
                 children: [
                   Container(
+                    color: Colors.white,
+                    child: Text(snapshot.data?.itens[0].observacao ?? ''),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
                     color: const Color(0xFFE9ECEF),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Row(
@@ -347,7 +453,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
                         final quantidadeDividida = item.qtdPedida / 15;
                         final isChecked = _checkedItems[index] ?? false;
 
-
                         final backgroundColor = isChecked
                             ? const Color.fromARGB(255, 164, 255, 151)
                             : (index % 2 == 0 ? _evenColor : _oddColor);
@@ -358,7 +463,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
                           child: Row(
                             children: [
                               _dataCellCor(
-                                '${item.codProdutoPai}.',
+                                '${item.codProdutoPai}',
                                 '${item.codCor}',
                                 flex: 2,
                                 isCode: true,
@@ -367,12 +472,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
                               _dataCell(item.descProdutoGen, flex: 6),
                               _verticalDividerRow(),
                               _verticalDividerRow(),
-                              _dataCell(
-                                item.localNatureza ?? '—',
-                                flex: 3,
-                                center: true,
-                                bold: true,
-                              ),
+                              _celulaLocalizacao(item),
                               _verticalDividerRow(),
                               _dataCellPecas(
                                 quantidadeDividida.toStringAsFixed(0),
@@ -381,7 +481,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
                               ),
                               _verticalDividerRow(),
                               _dataCell(
-                                '${item.qtdPedida.toStringAsFixed(1)}KG',
+                                '${item.qtdPedida.toStringAsFixed(2)}KG',
                                 flex: 2,
                                 right: true,
                                 bold: true,
@@ -462,6 +562,62 @@ class _RomaneioPageState extends State<RomaneioPage> {
             fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
             color: muted ? const Color(0xFFADB5BD) : const Color(0xFF212529),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _celulaLocalizacao(RomaneioModel item) {
+    final chave = _chaveItem(item);
+    final gavetas = _gavetasManuais[chave] ?? [];
+    final gavetasExibidas = gavetas.take(3).toList();
+
+    return Expanded(
+      flex: 3,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            gavetasExibidas.isNotEmpty
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 4,
+                      runSpacing: 2,
+                      children: gavetasExibidas
+                          .map(
+                            (g) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                g,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  )
+                : Text(
+                    item.localNatureza ?? '—',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF212529),
+                    ),
+                  ),
+          ],
         ),
       ),
     );

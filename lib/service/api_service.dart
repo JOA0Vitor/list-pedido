@@ -33,8 +33,6 @@ class ApiService {
     return '$_baseUrl/$modulo/$servico';
   }
 
-  //usar esse Endpoint - /pedidos/recentes - para pegar os pedidos mais recentes
-
   Future<PaginatedResponsePedido<PedidoModel>> getListPedidos(
     int empresa,
     String dataDigitacaoInicio,
@@ -183,7 +181,7 @@ class ApiService {
     try {
       final response = await _client
           .get(uri, headers: {'accept': 'application/json', 'x-api-key': token})
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(minutes: 2));
 
       print('STATUS ROMANEIO: ${response.statusCode}');
       print('BODY ROMANEIO: ${response.body}');
@@ -207,21 +205,6 @@ class ApiService {
       throw Exception('Erro inesperado: $e');
     }
   }
-
-  // Future<void> finalizarPedidoT(
-  //   String codPedido, {
-  //   List<Map<String, dynamic>>? itens,
-  // }) async {
-  //   final response = await http.post(
-  //     Uri.parse('$_baseUrlRomaneio/pedidos/$codPedido/finalizar'),
-  //     headers: {'X-API-Key': apiToken, 'Content-Type': 'application/json'},
-  //     body: itens != null ? jsonEncode({'itens': itens}) : null,
-  //   );
-
-  //   if (response.statusCode != 200) {
-  //     throw Exception('Falha ao finalizar pedido: ${response.body}');
-  //   }
-  // }
 
   Future<void> finalizarPedidoT(
     String? operador,
@@ -315,6 +298,42 @@ class ApiService {
     }
   }
 
+  Future<List<String>> buscarGavetas(String chave) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/localizacao/$chave');
+    final response = await _client.get(uri, headers: {'x-api-key': apiToken});
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao buscar localização: ${response.statusCode}');
+    }
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return (json['gavetas'] as List).cast<String>();
+  }
+
+  Future<List<String>> adicionarGaveta(String chave, String gaveta) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/localizacao/$chave/gaveta');
+    final response = await _client.post(
+      uri,
+      headers: {'x-api-key': apiToken, 'Content-Type': 'application/json'},
+      body: jsonEncode({'gaveta': gaveta}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao adicionar gaveta: ${response.statusCode}');
+    }
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return (json['gavetas'] as List).cast<String>();
+  }
+
+  Future<List<String>> removerGaveta(String chave, String gaveta) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/localizacao/$chave/gaveta/$gaveta');
+    final response = await _client.delete(
+      uri,
+      headers: {'x-api-key': apiToken},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao remover gaveta: ${response.statusCode}');
+    }
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return (json['gavetas'] as List).cast<String>();
+  }
 
   void dispose() {
     _client.close();
