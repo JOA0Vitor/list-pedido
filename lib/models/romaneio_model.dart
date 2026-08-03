@@ -1,8 +1,13 @@
 class PaginatedResponseRomaneio<T> {
   final String codPedido;
+  final String? observacao;
   final List<T> itens;
 
-  PaginatedResponseRomaneio({required this.codPedido, required this.itens});
+  PaginatedResponseRomaneio({
+    required this.codPedido,
+    this.observacao,
+    required this.itens,
+  });
 
   factory PaginatedResponseRomaneio.fromJson(
     Map<String, dynamic> json,
@@ -10,6 +15,7 @@ class PaginatedResponseRomaneio<T> {
   ) {
     return PaginatedResponseRomaneio(
       codPedido: json['codPedido'] ?? '',
+      observacao: json['observacao'] as String?,
       itens: (json['itens'] as List<dynamic>)
           .map((item) => fromJsonItem(item as Map<String, dynamic>))
           .toList(),
@@ -25,7 +31,6 @@ class RomaneioModel {
   final double qtdPedida;
   final String? codProdutoPai;
   final String? codCor;
-  final String? observacao;
 
   RomaneioModel({
     required this.codPedido,
@@ -35,7 +40,6 @@ class RomaneioModel {
     required this.qtdPedida,
     this.codProdutoPai,
     this.codCor,
-    this.observacao,
   });
 
   factory RomaneioModel.fromJson(Map<String, dynamic> json) => RomaneioModel(
@@ -46,7 +50,6 @@ class RomaneioModel {
     qtdPedida: ((json['qtdPedida'] ?? 0) as num).toDouble(),
     codProdutoPai: json['codProdutoPai'],
     codCor: json['codCor'],
-    observacao: json['observacao'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +60,5 @@ class RomaneioModel {
     'qtdPedida': qtdPedida,
     'codProdutoPai': codProdutoPai,
     'codCor': codCor,
-    'observacao': observacao ?? observacao,
   };
 }

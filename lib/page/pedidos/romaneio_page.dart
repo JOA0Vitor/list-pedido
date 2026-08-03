@@ -413,9 +413,40 @@ class _RomaneioPageState extends State<RomaneioPage> {
                 children: [
                   Container(
                     color: Colors.white,
-                    child: Text(snapshot.data?.itens[0].observacao ?? ''),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 10,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Observação: ',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.white,
+                            child: Text(
+                              snapshot.data?.observacao ?? '',
+                              softWrap: true,
+                              style: TextStyle(fontSize: 18, color: Colors.red),
+                            ),
+                          ),
+                        ),
+                        // Text(
+                        //   snapshot.data?.observacao ?? '',
+                        //   style: TextStyle(fontSize: 18, color: Colors.red),
+                        // ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
                   Container(
                     color: const Color(0xFFE9ECEF),
                     padding: const EdgeInsets.symmetric(vertical: 12),
