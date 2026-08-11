@@ -47,6 +47,7 @@ class _HomePageState extends State<HomePage> {
     'Guilherme',
     'Júnior',
     'Leandro',
+    'João Victor'
   ];
 
   List<PedidoRecenteModel> get _pedidosFiltrados {
@@ -64,9 +65,7 @@ class _HomePageState extends State<HomePage> {
       limite: 100,
     );
 
-    final pendentes = resposta.pedidos
-        .where((p) => p.apareceNaLista)
-        .toList();
+    final pendentes = resposta.pedidos.where((p) => p.apareceNaLista).toList();
 
     final codigosAtivos = pendentes.map((p) => p.codPedido).toSet();
     await _localStore.limparConfirmados(codigosAtivos);
@@ -82,19 +81,21 @@ class _HomePageState extends State<HomePage> {
 
     final future = _buscarPedidosParaExibir();
 
-    future.then((pedidos) {
-      if (!mounted) return;
-      setState(() {
-        _todosPedidos = pedidos;
-        _carregando = false;
-      });
-    }).catchError((e) {
-      if (!mounted) return;
-      setState(() {
-        _erro = e.toString();
-        _carregando = false;
-      });
-    });
+    future
+        .then((pedidos) {
+          if (!mounted) return;
+          setState(() {
+            _todosPedidos = pedidos;
+            _carregando = false;
+          });
+        })
+        .catchError((e) {
+          if (!mounted) return;
+          setState(() {
+            _erro = e.toString();
+            _carregando = false;
+          });
+        });
   }
 
   Future<void> _verificarNovoPedidos() async {
@@ -277,7 +278,7 @@ class _HomePageState extends State<HomePage> {
                                 color: PedidoRecenteModel.corPorEtapa(
                                   _pedidoSelecionado!.codEtapaExibicao!,
                                 ),
-                                codEtapa: _pedidoSelecionado!.codEtapaExibicao!
+                                codEtapa: _pedidoSelecionado!.codEtapaExibicao!,
                               ),
                             ],
                           ),
@@ -334,6 +335,44 @@ class _HomePageState extends State<HomePage> {
                             onPressed: _operadorSelecionado == null
                                 ? null
                                 : () async {
+                                    try {
+                                      final status = await apiService
+                                          .verificarStatusRomaneio(
+                                            _pedidoSelecionado!.codPedido,
+                                          );
+                                      if (status['aberto'] == true) {
+                                        final operadores =
+                                            (status['operadores'] as List).join(
+                                              ', ',
+                                            );
+                                        if (!mounted) return;
+                                        await showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title: const Text('Pedido em uso'),
+                                            content: Text(
+                                              'Esse pedido já está aberto por: $operadores',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: const Text('OK'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                    } catch (e) {
+                                      // se a checagem falhar (erro de rede, etc.),
+                                      // não trava o usuário por causa disso -- deixa passar
+                                      debugPrint(
+                                        'Erro ao checar status do romaneio: $e',
+                                      );
+                                    }
+
+                                    if (!mounted) return;
                                     final codPedidoFinalizado =
                                         await Navigator.push<String>(
                                           context,
@@ -422,12 +461,12 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SelecaoPerfilPage(),
-                ),
-              );
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (context) => const SelecaoPerfilPage(),
+              //   ),
+              // );
             },
             icon: const Icon(Icons.info_outline, color: Color(0xFF0043AC)),
           ),

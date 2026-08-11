@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/pedido_recentes_model.dart';
-import 'package:pedidosdp/models/pedidos_model.dart';
 import 'package:pedidosdp/widgets/formatData.dart';
 import 'package:pedidosdp/widgets/info_pedido.dart';
 import 'package:pedidosdp/widgets/status_etapa.dart';

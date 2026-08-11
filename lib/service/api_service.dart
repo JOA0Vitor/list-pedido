@@ -323,7 +323,9 @@ class ApiService {
   }
 
   Future<List<String>> removerGaveta(String chave, String gaveta) async {
-    final uri = Uri.parse('$_baseUrlRomaneio/localizacao/$chave/gaveta/$gaveta');
+    final uri = Uri.parse(
+      '$_baseUrlRomaneio/localizacao/$chave/gaveta/$gaveta',
+    );
     final response = await _client.delete(
       uri,
       headers: {'x-api-key': apiToken},
@@ -333,6 +335,15 @@ class ApiService {
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return (json['gavetas'] as List).cast<String>();
+  }
+
+  Future<Map<String, dynamic>> verificarStatusRomaneio(String codPedido) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/romaneio/$codPedido/status');
+    final response = await _client.get(uri, headers: {'x-api-key': apiToken});
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao verificar status do pedido');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   void dispose() {

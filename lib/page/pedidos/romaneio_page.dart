@@ -1,11 +1,9 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:pedidosdp/page/corte/corte_industrial.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../service/api_service.dart';
@@ -33,7 +31,9 @@ class _RomaneioPageState extends State<RomaneioPage> {
   final Map<String, List<String>> _gavetasManuais = {};
   WebSocketChannel? _canal;
   bool _finalizando = false;
-  static const String _servidor = '192.168.0.36:8000';
+
+  // Ajuste pro seu host/porta reais (mesmo do resto do app)
+ static const String _servidor = '192.168.0.36:8000';
   static const String _apiKey =
       'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w';
 
@@ -42,23 +42,28 @@ class _RomaneioPageState extends State<RomaneioPage> {
     super.initState();
     _api = ApiService(apiToken: _apiKey);
     _futureRomaneio = _api.getRomaneio(2, widget.codPedido, _apiKey);
-    // _futureRomaneio.then((resposta) {
-    //   if (mounted) _carregarSelecaoSalva(resposta.itens);
-    // });
+
     _futureRomaneio.then((resposta) {
       if (mounted) {
         _carregarSelecaoDoServidor(resposta.itens);
         _carregarGavetasManuais(resposta.itens);
       }
     });
+
     _conectarWebSocket();
   }
 
-  String _chaveSelecao() => 'romaneio_selecao_${widget.codPedido}';
+  @override
+  void dispose() {
+    _canal?.sink.close();
+    _api.dispose();
+    super.dispose();
+  }
 
   String _chaveItem(RomaneioModel item) =>
       '${item.codProdutoPai ?? item.codProduto}.${item.codCor ?? item.codProduto}';
 
+  /// Busca a seleção salva no backend (pode já ter sido marcada por outro tablet).
   Future<void> _carregarSelecaoDoServidor(List<RomaneioModel> itens) async {
     try {
       final resposta = await _api.buscarSelecaoRomaneio(widget.codPedido);
@@ -74,60 +79,70 @@ class _RomaneioPageState extends State<RomaneioPage> {
     }
   }
 
-  // Future<void> _carregarSelecaoSalva(List<RomaneioModel> itens) async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final salvos = (prefs.getStringList(_chaveSelecao()) ?? []).toSet();
+  /// Busca as gavetas cadastradas manualmente pra cada item, em paralelo.
+  Future<void> _carregarGavetasManuais(List<RomaneioModel> itens) async {
+    final chaves = itens.map(_chaveItem).toSet();
 
-  //   if (salvos.isEmpty) return;
+    final resultados = await Future.wait(
+      chaves.map((chave) async {
+        try {
+          final gavetas = await _api.buscarGavetas(chave);
+          return MapEntry(chave, gavetas);
+        } catch (e) {
+          debugPrint('Erro ao buscar gavetas de $chave: $e');
+          return MapEntry(chave, <String>[]);
+        }
+      }),
+    );
 
-  //   setState(() {
-  //     for (var i = 0; i < itens.length; i++) {
-  //       if (salvos.contains(_chaveItem(itens[i]))) {
-  //         _checkedItems[i] = true;
-  //       }
-  //     }
-  //   });
-  // }
-  Future<void> _salvarSelecao(List<RomaneioModel> itens) async {
-    final prefs = await SharedPreferences.getInstance();
-    final chavesSelecionadas = <String>[
-      for (final entry in _checkedItems.entries)
-        if (entry.value && entry.key < itens.length)
-          _chaveItem(itens[entry.key]),
-    ];
-    await prefs.setStringList(_chaveSelecao(), chavesSelecionadas);
+    if (!mounted) return;
+    setState(() {
+      _gavetasManuais.addEntries(resultados);
+    });
   }
 
+  /// Manda a seleção nova pro backend, que salva e avisa os outros tablets.
+  Future<void> _salvarSelecao(List<RomaneioModel> itens) async {
+    final chaves = <String>[
+      for (final entry in _checkedItems.entries)
+        if (entry.value && entry.key < itens.length) _chaveItem(itens[entry.key]),
+    ];
+    try {
+      await _api.salvarSelecaoRomaneio(widget.codPedido, chaves);
+    } catch (e) {
+      debugPrint('Erro ao salvar seleção do romaneio: $e');
+    }
+  }
+
+  /// Conecta no WebSocket desse pedido específico -- quando outro tablet
+  /// marcar algo, esse aqui atualiza sozinho, sem precisar dar F5.
   void _conectarWebSocket() {
     final uri = Uri.parse(
-      'ws://$_servidor/romaneio/${widget.codPedido}/ws?api_key=$_apiKey',
+      'ws://$_servidor/romaneio/${widget.codPedido}/ws?api_key=$_apiKey&operador=${Uri.encodeComponent(widget.nameOperador ?? "")}',
     );
     _canal = WebSocketChannel.connect(uri);
 
-    _canal!.stream.listen((mensagem) async {
-      final dados = jsonDecode(mensagem as String) as Map<String, dynamic>;
-      if (dados['tipo'] == 'selecao_atualizada') {
-        final chavesAtualizadas = (dados['itens'] as List)
-            .cast<String>()
-            .toSet();
-        final resposta = await _futureRomaneio;
-        if (!mounted) return;
-        setState(() {
-          for (var i = 0; i < resposta.itens.length; i++) {
-            _checkedItems[i] = chavesAtualizadas.contains(
-              _chaveItem(resposta.itens[i]),
-            );
-          }
-        });
-      }
-    }, onError: (e) => debugPrint('Erro no WebSocket do romaneio: $e'));
+    _canal!.stream.listen(
+      (mensagem) async {
+        final dados = jsonDecode(mensagem as String) as Map<String, dynamic>;
+        if (dados['tipo'] == 'selecao_atualizada') {
+          final chavesAtualizadas = (dados['itens'] as List).cast<String>().toSet();
+          final resposta = await _futureRomaneio;
+          if (!mounted) return;
+          setState(() {
+            for (var i = 0; i < resposta.itens.length; i++) {
+              _checkedItems[i] = chavesAtualizadas.contains(_chaveItem(resposta.itens[i]));
+            }
+          });
+        }
+      },
+      onError: (e) => debugPrint('Erro no WebSocket do romaneio: $e'),
+    );
   }
 
   static const Color _borderColor = Color(0xFFDEE2E6);
   static const double _borderWidth = 1.0;
-
   static const Color _evenColor = Colors.white;
-
   static const Color _oddColor = Color(0xFFFAFBFC);
   final Map<int, TipoGola> _tipoGolaPorItem = {};
   final Map<int, TextEditingController> _controllersQtdCamisas = {};
@@ -140,7 +155,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
     if (tipoGola == TipoGola.gola) {
       return '${total.toStringAsFixed(0)}KIT';
     }
-    return '${_formatarPesoComPonto(total)}G';
+    return '${_formatarPesoComPonto(total)}KG';
   }
 
   TextEditingController _controllerCamisas(int index) {
@@ -181,81 +196,15 @@ class _RomaneioPageState extends State<RomaneioPage> {
     return '${str.substring(0, posicaoPonto)}.${str.substring(posicaoPonto)}';
   }
 
-  Future<void> _abrirDialogoAdicionarGaveta(RomaneioModel item) async {
-    final controller = TextEditingController();
-    final chave = _chaveItem(item);
-
-    final gaveta = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Adicionar gaveta'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'ex: e.116.1'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Adicionar'),
-          ),
-        ],
-      ),
-    );
-
-    if (gaveta == null || gaveta.isEmpty || !mounted) return;
-
-    try {
-      final gavetas = await _api.adicionarGaveta(chave, gaveta);
-      setState(() => _gavetasManuais[chave] = gavetas);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao adicionar gaveta: $e')));
-    }
-  }
-
-  Future<void> _carregarGavetasManuais(List<RomaneioModel> itens) async {
-    final chaves = itens.map(_chaveItem).toSet();
-
-    final resultados = await Future.wait(
-      chaves.map((chave) async {
-        try {
-          final gavetas = await _api.buscarGavetas(chave);
-          return MapEntry(chave, gavetas);
-        } catch (e) {
-          debugPrint('Erro ao buscar gavetas de $chave: $e');
-          return MapEntry(chave, <String>[]);
-        }
-      }),
-    );
-
-    if (!mounted) return;
-    setState(() {
-      _gavetasManuais.addEntries(resultados);
-    });
-  }
-
-  @override
-  void dispose() {
-    _api.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
-            Text(
+            const Text(
               'Romaneio',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const Spacer(),
             Text(
@@ -305,7 +254,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
 
                           return {
                             'tipo': tipoGola == TipoGola.gola ? 'Gola' : 'Rib',
-                            'cor': item.codCor,
+                            'cor': item.codCor ?? item.codProduto,
                             'qtd': item.qtdPedida,
                             'unidade': _formatarTotal(index) == 'KIT'
                                 ? 'KIT'
@@ -331,7 +280,8 @@ class _RomaneioPageState extends State<RomaneioPage> {
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF0043AC),
+                backgroundColor: const Color(0xFF0043AC),
+                disabledBackgroundColor: const Color(0xFFB0B0B0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -354,7 +304,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
       ),
       body: FutureBuilder<PaginatedResponseRomaneio<RomaneioModel>>(
         future: _futureRomaneio,
-
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -464,16 +413,12 @@ class _RomaneioPageState extends State<RomaneioPage> {
                           align: TextAlign.center,
                         ),
                         _headerCell('Peças', flex: 2, align: TextAlign.center),
-                        _headerCell(
-                          'Quantidade',
-                          flex: 3,
-                          align: TextAlign.right,
-                        ),
+                        _headerCell('Quantidade', flex: 3, align: TextAlign.right),
                         const SizedBox(width: 28),
                       ],
                     ),
                   ),
-                  Container(height: 2, color: Color(0xFFDEE2E6)),
+                  Container(height: 2, color: const Color(0xFFDEE2E6)),
                   Expanded(
                     child: ListView.separated(
                       itemCount: itens.length,
@@ -545,11 +490,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
     );
   }
 
-  Widget _headerCell(
-    String text, {
-    required int flex,
-    required TextAlign align,
-  }) {
+  Widget _headerCell(String text, {required int flex, required TextAlign align}) {
     return Expanded(
       flex: flex,
       child: Padding(
