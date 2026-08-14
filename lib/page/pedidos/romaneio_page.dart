@@ -33,7 +33,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
   bool _finalizando = false;
 
   // Ajuste pro seu host/porta reais (mesmo do resto do app)
- static const String _servidor = '192.168.0.36:8000';
+  static const String _servidor = '192.168.0.36:8000';
   static const String _apiKey =
       'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w';
 
@@ -51,6 +51,15 @@ class _RomaneioPageState extends State<RomaneioPage> {
     });
 
     _conectarWebSocket();
+  }
+
+  void _recarregarRomaneio() {
+    setState(() {
+      _futureRomaneio = _api.getRomaneio(2, widget.codPedido, _apiKey);
+    });
+    _futureRomaneio.then((resposta) {
+      if (mounted) _carregarSelecaoDoServidor(resposta.itens);
+    });
   }
 
   @override
@@ -105,7 +114,8 @@ class _RomaneioPageState extends State<RomaneioPage> {
   Future<void> _salvarSelecao(List<RomaneioModel> itens) async {
     final chaves = <String>[
       for (final entry in _checkedItems.entries)
-        if (entry.value && entry.key < itens.length) _chaveItem(itens[entry.key]),
+        if (entry.value && entry.key < itens.length)
+          _chaveItem(itens[entry.key]),
     ];
     try {
       await _api.salvarSelecaoRomaneio(widget.codPedido, chaves);
@@ -126,18 +136,40 @@ class _RomaneioPageState extends State<RomaneioPage> {
       (mensagem) async {
         final dados = jsonDecode(mensagem as String) as Map<String, dynamic>;
         if (dados['tipo'] == 'selecao_atualizada') {
-          final chavesAtualizadas = (dados['itens'] as List).cast<String>().toSet();
+          final chavesAtualizadas = (dados['itens'] as List)
+              .cast<String>()
+              .toSet();
           final resposta = await _futureRomaneio;
           if (!mounted) return;
           setState(() {
             for (var i = 0; i < resposta.itens.length; i++) {
-              _checkedItems[i] = chavesAtualizadas.contains(_chaveItem(resposta.itens[i]));
+              _checkedItems[i] = chavesAtualizadas.contains(
+                _chaveItem(resposta.itens[i]),
+              );
             }
           });
         }
       },
-      onError: (e) => debugPrint('Erro no WebSocket do romaneio: $e'),
+      onError: (e) {
+        debugPrint('Erro no WebSocket do romaneio: $e');
+        _agendarReconexaoWebSocket();
+      },
+      onDone: () {
+        debugPrint('WebSocket do romaneio desconectou');
+        _agendarReconexaoWebSocket();
+      },
     );
+  }
+
+   bool _reconectandoWebSocket = false;
+
+  void _agendarReconexaoWebSocket() {
+    if (!mounted || _reconectandoWebSocket) return;
+    _reconectandoWebSocket = true;
+    Future.delayed(const Duration(seconds: 3), () {
+      _reconectandoWebSocket = false;
+      if (mounted) _conectarWebSocket();
+    });
   }
 
   static const Color _borderColor = Color(0xFFDEE2E6);
@@ -329,7 +361,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
                   Text('Erro: ${snapshot.error}'),
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _recarregarRomaneio,
                     child: const Text('Tentar novamente'),
                   ),
                 ],
@@ -413,7 +445,11 @@ class _RomaneioPageState extends State<RomaneioPage> {
                           align: TextAlign.center,
                         ),
                         _headerCell('Peças', flex: 2, align: TextAlign.center),
-                        _headerCell('Quantidade', flex: 3, align: TextAlign.right),
+                        _headerCell(
+                          'Quantidade',
+                          flex: 3,
+                          align: TextAlign.right,
+                        ),
                         const SizedBox(width: 28),
                       ],
                     ),
@@ -490,7 +526,11 @@ class _RomaneioPageState extends State<RomaneioPage> {
     );
   }
 
-  Widget _headerCell(String text, {required int flex, required TextAlign align}) {
+  Widget _headerCell(
+    String text, {
+    required int flex,
+    required TextAlign align,
+  }) {
     return Expanded(
       flex: flex,
       child: Padding(

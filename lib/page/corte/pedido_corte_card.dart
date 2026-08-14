@@ -48,6 +48,20 @@ class PedidoCorteCard extends StatelessWidget {
                 ),
               ),
             ),
+            Expanded(
+              flex: 2,
+              child: InfoColumn(
+                label: 'DATA AGENDADA',
+                value: pedido.dataAgendada != null
+                    ? formatarData(pedido.dataAgendada!)
+                    : 'Não agendado',
+                valueStyle: const TextStyle(
+                  color: Color(0xFF0B1628),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
             const SizedBox(width: 14),
             // InfoColumn(
             //   label: 'CLIENTE - ${pedido.codEtapa}',
@@ -64,7 +78,7 @@ class PedidoCorteCard extends StatelessWidget {
             // ),
             const SizedBox(width: 50),
             Expanded(
-              flex:3,
+              flex: 3,
               child: EtapaColumn(
                 color: pedido.status == 1
                     ? Color(0xFFFE8D00)
@@ -86,6 +100,8 @@ class PedidoCorteCard extends StatelessWidget {
       ),
     );
   }
+
+  
 }
 
 class EtapaColumn extends StatelessWidget {

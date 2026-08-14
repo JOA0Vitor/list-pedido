@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:pedidosdp/page/adm/adm_page.dart';
 
 import 'pedidos/home_page.dart';
 import 'corte/corte_industrial_home_page.dart';
 
-enum TipoUsuario { operadores, corte }
+enum TipoUsuario { operadores, corte, adm }
 
 class SelecaoPerfilPage extends StatefulWidget {
   const SelecaoPerfilPage({super.key});
@@ -13,7 +14,8 @@ class SelecaoPerfilPage extends StatefulWidget {
 }
 
 class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
-  static const String _senhaCorte = '9616';
+  static const String _senhaCorte = '1234';
+  static const String _senhaAdm = '2069';
 
   final _formKey = GlobalKey<FormState>();
   final _senhaController = TextEditingController();
@@ -21,6 +23,7 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
   TipoUsuario? _tipoSelecionado;
   bool _senhaVisivel = false;
   bool _senhaErrada = false;
+  bool _senhaErradaAdm = false;
 
   @override
   void dispose() {
@@ -44,6 +47,14 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const CorteIndustrialHomePage()),
+      );
+    } else {
+      setState(() => _senhaErrada = true);
+    }
+    if (_senhaController.text == _senhaAdm) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdmPage()),
       );
     } else {
       setState(() => _senhaErrada = true);
@@ -86,6 +97,10 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
                         value: TipoUsuario.corte,
                         child: Text('Corte Industrial'),
                       ),
+                      DropdownMenuItem(
+                        value: TipoUsuario.adm,
+                        child: Text('Adm'),
+                      ),
                     ],
                     validator: (value) =>
                         value == null ? 'Selecione um tipo de usuário' : null,
@@ -99,6 +114,39 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
                   ),
 
                   if (_tipoSelecionado == TipoUsuario.corte) ...[
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _senhaController,
+                      obscureText: !_senhaVisivel,
+                       keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Senha',
+                        border: const OutlineInputBorder(),
+                        errorText: _senhaErrada ? 'Senha incorreta' : null,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _senhaVisivel
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () =>
+                              setState(() => _senhaVisivel = !_senhaVisivel),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Digite a senha';
+                        }
+                        return null;
+                      },
+                      onChanged: (_) {
+                        if (_senhaErrada) setState(() => _senhaErrada = false);
+                      },
+                      onFieldSubmitted: (_) => _entrar(),
+                    ),
+                  ],
+
+                   if (_tipoSelecionado == TipoUsuario.adm) ...[
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _senhaController,

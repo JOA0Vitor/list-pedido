@@ -342,7 +342,7 @@ class ApiService {
     final response = await _client.get(uri, headers: {'x-api-key': apiToken});
     if (response.statusCode != 200) {
       throw Exception('Erro ao verificar status do pedido');
-    }
+}
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 

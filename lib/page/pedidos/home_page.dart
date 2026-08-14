@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:pedidosdp/models/pedido_recentes_model.dart';
 import 'package:pedidosdp/page/pedidos/list_pedidos.dart';
 import 'package:pedidosdp/page/pedidos/romaneio_page.dart';
-import 'package:pedidosdp/page/selecao_perfil_page.dart';
 import 'package:pedidosdp/service/api_service.dart';
 import 'package:pedidosdp/service/notification_service.dart';
 import 'package:pedidosdp/service/pedidos_local_store.dart';
@@ -47,7 +46,8 @@ class _HomePageState extends State<HomePage> {
     'Guilherme',
     'Júnior',
     'Leandro',
-    'João Victor'
+    'João Victor',
+    'Matheus',
   ];
 
   List<PedidoRecenteModel> get _pedidosFiltrados {

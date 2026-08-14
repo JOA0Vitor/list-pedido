@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pedidosdp/models/corte_model.dart';
+import 'package:pedidosdp/page/corte/agenda_pedido_dialog.dart';
 import 'package:pedidosdp/page/corte/corte_industrial.dart';
 import 'package:pedidosdp/page/corte/list_pedidos_corte.dart';
 import 'package:pedidosdp/page/selecao_perfil_page.dart';
@@ -69,8 +70,9 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
       DeviceOrientation.landscapeRight,
     ]);
     _api = ApiService(
-      apiToken: 'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
-    ); 
+      apiToken:
+          'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w',
+    );
     _buscarPedidos();
   }
 
@@ -78,21 +80,9 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
     await Future.delayed(const Duration(milliseconds: 500));
 
     final itensFalsos = [
-      CorteModel(
-        codPedido: '4481',
-        status: 1, 
-        dataEmissao: '2026-07-15',
-      ),
-      CorteModel(
-        codPedido: '4466',
-        status: 1, 
-        dataEmissao: '2026-07-14',
-      ),
-      CorteModel(
-        codPedido: '4436',
-        status: 4,
-        dataEmissao: '2026-07-13',
-      ),
+      CorteModel(codPedido: '4481', status: 1, dataEmissao: '2026-07-15'),
+      CorteModel(codPedido: '4466', status: 1, dataEmissao: '2026-07-14'),
+      CorteModel(codPedido: '4436', status: 4, dataEmissao: '2026-07-13'),
     ];
 
     return PaginatedResponseCorte(codPedido: '', itens: itensFalsos);
@@ -221,6 +211,20 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
                               ),
                             );
                           }
+                        },
+                        onAgendar: (pedido, resultado) {
+                          setState(() {
+                            final index = _todosPedidos.indexWhere(
+                              (p) => p.codPedido == pedido.codPedido,
+                            );
+                            if (index != -1) {
+                              _todosPedidos[index] = _todosPedidos[index]
+                                  .copyWith(
+                                    dataAgendada: resultado.data
+                                        .toIso8601String(),
+                                  );
+                            }
+                          });
                         },
                       ),
                     );
