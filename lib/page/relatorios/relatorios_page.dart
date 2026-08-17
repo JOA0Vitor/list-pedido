@@ -1,5 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/relatorios/widgets/metric_card.dart';
+import 'package:pedidosdp/page/api_configuracao/api_configuracao.dart';
+import 'package:pedidosdp/page/relatorios/data/empresa_service.dart';
+import 'package:pedidosdp/page/relatorios/data/metricas_resumo.dart';
+import 'package:pedidosdp/page/relatorios/metricas_row.dart';
+import 'package:pedidosdp/page/relatorios/resumo_operadores_card.dart';
+import 'package:pedidosdp/page/relatorios/tendencia_pedidos_card.dart';
+import 'package:pedidosdp/page/relatorios/widgets/filtro_periodo.dart';
+import 'package:pedidosdp/page/relatorios/widgets/pedido_mock.dart';
+
+enum Periodo {
+  dias7(dias: 7, label: '7 dias'),
+  dias15(dias: 15, label: '15 dias'),
+  dias30(dias: 30, label: '30 dias'),
+  dias90(dias: 90, label: '90 dias');
+
+  const Periodo({required this.dias, required this.label});
+  final int dias;
+  final String label;
+}
 
 class RelatoriosPage extends StatefulWidget {
   const RelatoriosPage({super.key});
@@ -9,254 +27,135 @@ class RelatoriosPage extends StatefulWidget {
 }
 
 class _RelatoriosState extends State<RelatoriosPage> {
+  Periodo _periodoSelecionado = Periodo.dias30;
+  final List<PedidoMock> _pedidosMock = gerarPedidosMockados();
+
+  void _onPeriodoChanged(Periodo novo) {
+    setState(() => _periodoSelecionado = novo);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Relatórios',
-          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Text(
-                'Visão geral das métricas operacionais e do desempenho dos operadores',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-              ),
-              const SizedBox(height: 25),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Gráficos',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-                  ),
+    // final metricas = calcularMetricas(
+    //   _pedidosMock,
+    //   _periodoSelecionado,
+    // );
+    // final dadosTendencia = agruparPedidosPorDia(
+    //   _pedidosMock,
+    //   _periodoSelecionado,
+    // );
 
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          side: const BorderSide(
-                            color: Colors.grey,
-                            width: 1.0,
-                          ),
-                        ),
-                        icon: const Icon(
-                          Icons.calendar_month_outlined,
-                          color: Colors.black,
-                          size: 18,
-                        ),
-                        label: const Text(
-                          'Ultimos 30 dias',
-                          style: TextStyle(color: Colors.black, fontSize: 16),
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0043AC),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        icon: const Icon(
-                          Icons.download_outlined,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        label: const Text(
-                          'Exportar',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    ],
+    return ValueListenableBuilder<Empresa?>(
+      valueListenable: EmpresaService.instance.empresaAtual,
+      builder: (context, empresaAtual, _) {
+        if (empresaAtual == null) {
+          return const Center(child: Text('Nenhuma empresa selecionada'));
+        }
+        final empresaId = empresaAtual.id;
+        final metricas = calcularMetricas(
+          _pedidosMock,
+          _periodoSelecionado,
+          empresaId,
+        );
+        final dadosTendencia = agruparPedidosPorDia(
+          _pedidosMock,
+          _periodoSelecionado,
+          empresaId,
+        );
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              'Relatórios',
+              style: TextStyle(fontSize: 25, fontWeight: FontWeight.w600),
+            ),
+            leading: IconButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Center(
+                  child: Text(
+                    'Empresa: ${empresaAtual.label}',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
-                ],
-              ),
-              const SizedBox(height: 25),
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: MetricCard(
-                      label: 'Total de pedidos',
-                      value: '14,285',
-                      icon: Icons.show_chart_rounded,
-                      color: const Color(0xD528A028),
-                      message: '+12.5% vs ultimo mês',
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: MetricCard(
-                      label: 'Média por operador',
-                      value: '420',
-                      icon: Icons.remove,
-                      color: Colors.grey,
-                      message: 'Compatível com a média',
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 25),
-              Container(
-                height: 230,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color.fromARGB(255, 163, 165, 167),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Tendência de Pedidos (30 Dias)',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    ),
-                    Icon(Icons.arrow_drop_down_rounded, color: Colors.black),
-                  ],
-                ),
-              ),
-              SizedBox(height: 25),
-              // Container(
-              //   color: const Color(0xFFE9ECEF),
-              //   padding: const EdgeInsets.symmetric(vertical: 12),
-              //   child: Row(
-              //     children: [
-              //       Text(
-              //         'Resumo por Operador',
-              //         style: const TextStyle(
-              //           fontSize: 18,
-              //           fontWeight: FontWeight.w500,
-              //           color: Colors.black,
-              //         ),
-              //       ),
-              //       const Spacer(),
-              //       TextFormField()
-              //     ],
-              //   ),
-              // ),
-              Container(
-                color: const Color(0xFFE9ECEF),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  children: [
-                    _headerCell('Nome', flex: 2, align: TextAlign.left),
-                    _headerCell(
-                      'Pedidos Fidelizados',
-                      flex: 6,
-                      align: TextAlign.left,
-                    ),
-                    _headerCell('Eficiência', flex: 2, align: TextAlign.center),
-                  ],
-                ),
-              ),
-              Container(
-                color: Color(0xFFFAFBFC),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Row(
-                  children: [
-                    _verticalDividerRow(),
-                    _dataCell('Gledson', flex: 2),
-
-                    _verticalDividerRow(),
-                    _dataCell('352', flex: 6),
-                    _verticalDividerRow(),
-                    _dataCell('95.4%', flex: 2, center: true, bold: true),
-                    _verticalDividerRow(),
-                  ],
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              children: [
+                Text(
+                  'Visão geral das métricas operacionais e do desempenho dos operadores',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 25),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Gráficos',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
 
-  Widget _headerCell(
-    String text, {
-    required int flex,
-    required TextAlign align,
-  }) {
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(
-          text,
-          textAlign: align,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF495057),
+                    Row(
+                      children: [
+                        FiltroPeriodo(
+                          selecionado: _periodoSelecionado,
+                          onChanged: _onPeriodoChanged,
+                        ),
+
+                        SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0043AC),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.download_outlined,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: const Text(
+                            'Exportar',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 25),
+                MetricasRow(metricas: metricas),
+
+                SizedBox(height: 25),
+                TendenciaPedidosCard(
+                  dados: dadosTendencia,
+                  periodo: _periodoSelecionado,
+                ),
+
+                SizedBox(height: 25),
+                ResumoOperadoresCard(
+                  pedidos: _pedidosMock,
+                  periodo: _periodoSelecionado,
+                  empresaId: empresaId,
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _verticalDividerRow() {
-    return Container(width: 1.0, height: 16, color: Color(0xFFDEE2E6));
-  }
-
-  Widget _dataCell(
-    String text, {
-    required int flex,
-    bool center = false,
-    bool right = false,
-    bool isCode = false,
-    bool bold = false,
-    bool muted = false,
-  }) {
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(
-          text,
-          textAlign: center
-              ? TextAlign.center
-              : right
-              ? TextAlign.right
-              : TextAlign.left,
-          style: TextStyle(
-            fontSize: isCode ? 11 : 12,
-            fontFamily: isCode ? 'monospace' : null,
-            fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
-            color: muted ? const Color(0xFFADB5BD) : const Color(0xFF212529),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

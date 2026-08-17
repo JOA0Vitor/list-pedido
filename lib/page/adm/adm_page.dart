@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pedidosdp/page/api_configuracao/api_configuracao.dart';
 import 'package:pedidosdp/page/relatorios/relatorios_page.dart';
 import 'package:pedidosdp/page/selecao_perfil_page.dart';
 import 'package:pedidosdp/widgets/drawer_item.dart';
@@ -46,11 +47,6 @@ class _AdmPageState extends State<AdmPage> {
               onTap: () => Navigator.of(context).pop(),
             ),
             DrawerItem(
-              icon: Icons.settings_outlined,
-              label: 'Configurações',
-              onTap: () => Navigator.of(context).pop(),
-            ),
-            DrawerItem(
               icon: Icons.person_2_outlined,
               label: 'Operadores',
               onTap: () => Navigator.of(context).pop(),
@@ -59,8 +55,15 @@ class _AdmPageState extends State<AdmPage> {
               icon: Icons.insert_chart_outlined_rounded,
               label: 'Relatórios',
               onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const RelatoriosPage()),
+              ),
+            ),
+            DrawerItem(
+              icon: Icons.settings_outlined,
+              label: 'Api Configurações',
+              onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const RelatoriosPage(),
+                  builder: (context) => const ApiConfiguracao(),
                 ),
               ),
             ),
@@ -213,17 +216,11 @@ class _AdmPageState extends State<AdmPage> {
                     _verticalDividerRow(),
                     _dataCell('10', flex: 6),
                     _verticalDividerRow(),
-                    _dataCell(
-                      '...',
-                      flex: 2,
-                      center: true,
-                      bold: true,
-                    ),
+                    _dataCell('...', flex: 2, center: true, bold: true),
                     _verticalDividerRow(),
                   ],
                 ),
               ),
-              
             ],
           ),
         ),
