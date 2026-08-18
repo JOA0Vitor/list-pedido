@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/relatorios/data/empresa_service.dart';
+import 'package:pedidosdp/page/adm/relatorios/data/empresa_service.dart';
 
 enum Empresa {
   santaCruz(id: 1, label: 'Santa Cruz'),
@@ -28,7 +28,6 @@ class _ApiConfiguracaoState extends State<ApiConfiguracao> {
   @override
   void initState() {
     super.initState();
-    // pré-seleciona a empresa que já está ativa no app
     _empresaSelecionada = EmpresaService.instance.empresaAtual.value;
   }
 
@@ -51,13 +50,10 @@ class _ApiConfiguracaoState extends State<ApiConfiguracao> {
     final payload = {
       'baseUrl': _baseUrlController.text.trim(),
       'apiToken': _apiTokenController.text.trim(),
-      'empresa': _empresaSelecionada!.id, // 1 = Santa Cruz, 2 = Caruaru
+      'empresa': _empresaSelecionada!.id,
     };
 
-    // Atualiza a empresa ativa globalmente — dashboard e demais telas reagem sozinhas
     EmpresaService.instance.empresaAtual.value = _empresaSelecionada!;
-
-    // TODO: enviar `payload` para a API/armazenamento local (ex: shared_preferences)
 
     ScaffoldMessenger.of(
       context,

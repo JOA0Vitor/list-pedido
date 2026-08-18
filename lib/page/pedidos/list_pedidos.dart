@@ -4,14 +4,12 @@ import 'package:pedidosdp/page/pedidos/pedido_card.dart';
 
 class PedidosScreen extends StatelessWidget {
   final List<PedidoRecenteModel> pedidos;
-  // final Map<int, String> nomesClientes;
     final void Function(PedidoRecenteModel pedido) onPedidoTap;
 
 
   const PedidosScreen({
     super.key,
     required this.pedidos,
-    // required this.nomesClientes,
     required this.onPedidoTap,
   });
 
@@ -27,46 +25,9 @@ class PedidosScreen extends StatelessWidget {
         final pedido = pedidosOrdenados[index];
         return PedidoCard(
           pedido: pedido,
-          // nomeCliente: pedido.nomeCliente,
           onTap: () async {
             print('tocou lista ${pedido.codPedido}');
             onPedidoTap(pedido);
-            // Navigator.push(
-            //   context,
-            //   MaterialPageRoute(
-            //     builder: (context) =>
-            //         RomaneioPage(codPedido: pedido.codPedido),
-            //   ),
-            // );
-            // Scaffold.of(context).openDrawer();
-            // final lockService = PedidoLockService();
-            // const usuarioAtual = 'user1';
-
-            // final usuarioEmUso = await lockService.usuarioEmUso(
-            //   pedido.codPedido,
-            // );
-
-            // if (usuarioEmUso != null && usuarioEmUso != usuarioAtual) {
-            //   showDialog(
-            //     context: context,
-            //     builder: (_) => AlertDialog(
-            //       title: const Text('Pedido em uso'),
-            //       content: Text('$usuarioEmUso já está nesse pedido.'),
-            //       actions: [
-            //         TextButton(
-            //           onPressed: () => Navigator.pop(context),
-            //           child: const Text('OK'),
-            //         ),
-            //       ],
-            //     ),
-            //   );
-            //   return;
-            // }
-
-            // await lockService.travar(pedido.codPedido, usuarioAtual);
-
-
-            // await lockService.destravar(pedido.codPedido);
           },
         );
       },

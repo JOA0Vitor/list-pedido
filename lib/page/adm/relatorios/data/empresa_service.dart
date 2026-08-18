@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/api_configuracao/api_configuracao.dart';
+import 'package:pedidosdp/page/adm/api_configuracao/api_configuracao.dart';
 
 class EmpresaService {
   EmpresaService._();

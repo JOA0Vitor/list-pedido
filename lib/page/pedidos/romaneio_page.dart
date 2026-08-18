@@ -1,9 +1,12 @@
-// ignore_for_file: use_build_context_synchronously, deprecated_member_use
-
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
 import 'package:pedidosdp/page/corte/corte_industrial.dart';
+import 'package:pedidosdp/page/pedidos/romaneio_oddline_queue.dart';
+import 'package:pedidosdp/service/dispositivoId.dart';
+import 'package:pedidosdp/widgets/info_row.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../service/api_service.dart';
@@ -12,12 +15,16 @@ class RomaneioPage extends StatefulWidget {
   final String codPedido;
   final bool somenteLeitura;
   final String? nameOperador;
+  final String? nameRepresentante;
+  final String? nameCliente;
 
   const RomaneioPage({
     super.key,
     required this.codPedido,
     this.somenteLeitura = false,
     this.nameOperador,
+    required this.nameRepresentante,
+    required this.nameCliente,
   });
 
   @override
@@ -32,7 +39,10 @@ class _RomaneioPageState extends State<RomaneioPage> {
   WebSocketChannel? _canal;
   bool _finalizando = false;
 
-  // Ajuste pro seu host/porta reais (mesmo do resto do app)
+  final _filaOffline = RomaneioOfflineQueue();
+  String? _tokenSessao;
+  Timer? _heartbeatTimer;
+
   static const String _servidor = '192.168.0.36:8000';
   static const String _apiKey =
       'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJhcGkiLCJhdWQiOiJhcGkiLCJleHAiOjE5MjY1NDY5MjEsInN1YiI6ImpvYW8udml0b3IiLCJjc3dUb2tlbiI6ImM0ODNnSDF1IiwiZGJOYW1lU3BhY2UiOiJjb25zaXN0ZW0ifQ.pEi6ia_w2Tbmi6AOWmFL1HDMn0ZrR9ouwg6t-dkb6IuOnN6k0P3c-WXUNKJiP5bSuUFfOSh_gG1L8Ean29L35w';
@@ -51,28 +61,65 @@ class _RomaneioPageState extends State<RomaneioPage> {
     });
 
     _conectarWebSocket();
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+      _entrarNoRomaneio();
+    });
   }
 
-  void _recarregarRomaneio() {
-    setState(() {
-      _futureRomaneio = _api.getRomaneio(2, widget.codPedido, _apiKey);
-    });
-    _futureRomaneio.then((resposta) {
-      if (mounted) _carregarSelecaoDoServidor(resposta.itens);
-    });
+  Future<void> _entrarNoRomaneio() async {
+    try {
+      final dispositivoId = await DispositivoId.obter();
+
+      _tokenSessao = await _api.entrarNoRomaneio(
+        widget.codPedido,
+        widget.nameOperador ?? '',
+        dispositivoId,
+      );
+
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (_) async {
+        if (_tokenSessao == null) return;
+
+        final ok = await _api.heartbeatRomaneio(
+          widget.codPedido,
+          _tokenSessao!,
+        );
+
+        if (!ok) {
+          debugPrint('Heartbeat falhou; tentará novamente no próximo ciclo');
+        }
+      });
+    } on PedidoEmUsoException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.mensagem)));
+      Navigator.of(context).pop();
+    } catch (e) {
+      debugPrint('Erro ao entrar no romaneio: $e');
+    }
   }
 
   @override
   void dispose() {
+    _heartbeatTimer?.cancel();
+    if (_tokenSessao != null) {
+      _api.sairDoRomaneio(widget.codPedido, _tokenSessao!);
+    }
     _canal?.sink.close();
     _api.dispose();
     super.dispose();
   }
 
+  String _primeirosNomes(String nomeCompleto, {int max = 3}) {
+    final partes = nomeCompleto.trim().split(RegExp(r'\s+'));
+    if (partes.length <= max) return nomeCompleto.trim();
+    return partes.take(max).join(' ');
+  }
+
   String _chaveItem(RomaneioModel item) =>
       '${item.codProdutoPai ?? item.codProduto}.${item.codCor ?? item.codProduto}';
 
-  /// Busca a seleção salva no backend (pode já ter sido marcada por outro tablet).
   Future<void> _carregarSelecaoDoServidor(List<RomaneioModel> itens) async {
     try {
       final resposta = await _api.buscarSelecaoRomaneio(widget.codPedido);
@@ -88,7 +135,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
     }
   }
 
-  /// Busca as gavetas cadastradas manualmente pra cada item, em paralelo.
   Future<void> _carregarGavetasManuais(List<RomaneioModel> itens) async {
     final chaves = itens.map(_chaveItem).toSet();
 
@@ -110,7 +156,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
     });
   }
 
-  /// Manda a seleção nova pro backend, que salva e avisa os outros tablets.
   Future<void> _salvarSelecao(List<RomaneioModel> itens) async {
     final chaves = <String>[
       for (final entry in _checkedItems.entries)
@@ -119,13 +164,25 @@ class _RomaneioPageState extends State<RomaneioPage> {
     ];
     try {
       await _api.salvarSelecaoRomaneio(widget.codPedido, chaves);
+      await _filaOffline.limparPendente(widget.codPedido);
     } catch (e) {
-      debugPrint('Erro ao salvar seleção do romaneio: $e');
+      debugPrint('Sem conexão, guardando localmente: $e');
+      await _filaOffline.salvarPendente(widget.codPedido, chaves);
     }
   }
 
-  /// Conecta no WebSocket desse pedido específico -- quando outro tablet
-  /// marcar algo, esse aqui atualiza sozinho, sem precisar dar F5.
+  Future<void> _tentarSincronizarPendente() async {
+    final pendente = await _filaOffline.lerPendente(widget.codPedido);
+    if (pendente == null) return;
+    try {
+      await _api.salvarSelecaoRomaneio(widget.codPedido, pendente);
+      await _filaOffline.limparPendente(widget.codPedido);
+      debugPrint('Sincronizado com sucesso após reconexão');
+    } catch (e) {
+      debugPrint('Ainda sem conexão, tenta de novo depois: $e');
+    }
+  }
+
   void _conectarWebSocket() {
     final uri = Uri.parse(
       'ws://$_servidor/romaneio/${widget.codPedido}/ws?api_key=$_apiKey&operador=${Uri.encodeComponent(widget.nameOperador ?? "")}',
@@ -161,14 +218,22 @@ class _RomaneioPageState extends State<RomaneioPage> {
     );
   }
 
-   bool _reconectandoWebSocket = false;
+  bool _reconectandoWebSocket = false;
+  Timer? _timerReconexaoWebSocket;
+  int _tentativasWebSocket = 0;
 
   void _agendarReconexaoWebSocket() {
-    if (!mounted || _reconectandoWebSocket) return;
-    _reconectandoWebSocket = true;
-    Future.delayed(const Duration(seconds: 3), () {
-      _reconectandoWebSocket = false;
-      if (mounted) _conectarWebSocket();
+    if (!mounted || _timerReconexaoWebSocket?.isActive == true) return;
+
+    final segundos = min(10, 2 * (1 << _tentativasWebSocket));
+    _tentativasWebSocket = min(_tentativasWebSocket + 1, 4);
+
+    _timerReconexaoWebSocket = Timer(Duration(seconds: segundos), () {
+      _timerReconexaoWebSocket = null;
+
+      if (mounted) {
+        _conectarWebSocket();
+      }
     });
   }
 
@@ -332,6 +397,14 @@ class _RomaneioPageState extends State<RomaneioPage> {
                       style: TextStyle(color: Color(0xFFFFFFFF)),
                     ),
             ),
+          IconButton(
+            onPressed: () => _showInfoDialog(
+              context,
+              widget.nameRepresentante,
+              _primeirosNomes('${widget.nameCliente}'),
+            ),
+            icon: const Icon(Icons.info_outline, color: Color(0xFF0043AC)),
+          ),
         ],
       ),
       body: FutureBuilder<PaginatedResponseRomaneio<RomaneioModel>>(
@@ -361,7 +434,7 @@ class _RomaneioPageState extends State<RomaneioPage> {
                   Text('Erro: ${snapshot.error}'),
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: _recarregarRomaneio,
+                    onPressed: _tentarSincronizarPendente,
                     child: const Text('Tentar novamente'),
                   ),
                 ],
@@ -421,10 +494,6 @@ class _RomaneioPageState extends State<RomaneioPage> {
                             ),
                           ),
                         ),
-                        // Text(
-                        //   snapshot.data?.observacao ?? '',
-                        //   style: TextStyle(fontSize: 18, color: Colors.red),
-                        // ),
                       ],
                     ),
                   ),
@@ -522,6 +591,33 @@ class _RomaneioPageState extends State<RomaneioPage> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showInfoDialog(BuildContext context, representative, cliente) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text(
+          'Informação do pedido',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InfoRow(label: 'Representante:', value: representative),
+            const SizedBox(height: 12),
+            InfoRow(label: 'Cliente:', value: cliente),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/relatorios/data/operador_resumo.dart';
+import 'package:pedidosdp/page/adm/relatorios/data/operador_resumo.dart';
 
 class OperadorRow extends StatelessWidget {
   const OperadorRow({super.key, required this.operador, required this.zebra});

@@ -18,46 +18,65 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
   static const String _senhaAdm = '2069';
 
   final _formKey = GlobalKey<FormState>();
-  final _senhaController = TextEditingController();
+  final _senhaControllerCorte = TextEditingController();
+  final _senhaControllerAdm = TextEditingController();
 
   TipoUsuario? _tipoSelecionado;
-  bool _senhaVisivel = false;
-  bool _senhaErrada = false;
+
+  bool _senhaVisivelCorte = false;
+  bool _senhaVisivelAdm = false;
+  bool _senhaErradaCorte = false;
   bool _senhaErradaAdm = false;
 
   @override
   void dispose() {
-    _senhaController.dispose();
+    _senhaControllerCorte.dispose();
+    _senhaControllerAdm.dispose();
     super.dispose();
+  }
+
+  void _resetarEstadoSenhas() {
+    _senhaControllerCorte.clear();
+    _senhaControllerAdm.clear();
+    _senhaErradaCorte = false;
+    _senhaErradaAdm = false;
   }
 
   void _entrar() {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_tipoSelecionado == TipoUsuario.operadores) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-      return;
-    }
+    switch (_tipoSelecionado) {
+      case TipoUsuario.operadores:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+        break;
 
+      case TipoUsuario.corte:
+        if (_senhaControllerCorte.text == _senhaCorte) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const CorteIndustrialHomePage()),
+          );
+        } else {
+          setState(() => _senhaErradaCorte = true);
+        }
+        break;
 
-    if (_senhaController.text == _senhaCorte) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const CorteIndustrialHomePage()),
-      );
-    } else {
-      setState(() => _senhaErrada = true);
-    }
-    if (_senhaController.text == _senhaAdm) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AdmPage()),
-      );
-    } else {
-      setState(() => _senhaErrada = true);
+      case TipoUsuario.adm:
+        if (_senhaControllerAdm.text == _senhaAdm) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdmPage()),
+          );
+        } else {
+          setState(() => _senhaErradaAdm = true);
+        }
+        break;
+
+      case null:
+        break;
     }
   }
 
@@ -107,75 +126,43 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
                     onChanged: (value) {
                       setState(() {
                         _tipoSelecionado = value;
-                        _senhaErrada = false;
-                        _senhaController.clear();
+                        _resetarEstadoSenhas();
                       });
                     },
                   ),
 
                   if (_tipoSelecionado == TipoUsuario.corte) ...[
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _senhaController,
-                      obscureText: !_senhaVisivel,
-                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Senha',
-                        border: const OutlineInputBorder(),
-                        errorText: _senhaErrada ? 'Senha incorreta' : null,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _senhaVisivel
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () =>
-                              setState(() => _senhaVisivel = !_senhaVisivel),
-                        ),
+                    _SenhaField(
+                      controller: _senhaControllerCorte,
+                      visivel: _senhaVisivelCorte,
+                      erro: _senhaErradaCorte ? 'Senha incorreta' : null,
+                      onToggleVisivel: () => setState(
+                        () => _senhaVisivelCorte = !_senhaVisivelCorte,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Digite a senha';
+                      onChanged: () {
+                        if (_senhaErradaCorte) {
+                          setState(() => _senhaErradaCorte = false);
                         }
-                        return null;
                       },
-                      onChanged: (_) {
-                        if (_senhaErrada) setState(() => _senhaErrada = false);
-                      },
-                      onFieldSubmitted: (_) => _entrar(),
+                      onSubmitted: _entrar,
                     ),
                   ],
 
-                   if (_tipoSelecionado == TipoUsuario.adm) ...[
+                  if (_tipoSelecionado == TipoUsuario.adm) ...[
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _senhaController,
-                      obscureText: !_senhaVisivel,
-                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Senha',
-                        border: const OutlineInputBorder(),
-                        errorText: _senhaErrada ? 'Senha incorreta' : null,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _senhaVisivel
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () =>
-                              setState(() => _senhaVisivel = !_senhaVisivel),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Digite a senha';
+                    _SenhaField(
+                      controller: _senhaControllerAdm,
+                      visivel: _senhaVisivelAdm,
+                      erro: _senhaErradaAdm ? 'Senha incorreta' : null,
+                      onToggleVisivel: () =>
+                          setState(() => _senhaVisivelAdm = !_senhaVisivelAdm),
+                      onChanged: () {
+                        if (_senhaErradaAdm) {
+                          setState(() => _senhaErradaAdm = false);
                         }
-                        return null;
                       },
-                      onChanged: (_) {
-                        if (_senhaErrada) setState(() => _senhaErrada = false);
-                      },
-                      onFieldSubmitted: (_) => _entrar(),
+                      onSubmitted: _entrar,
                     ),
                   ],
 
@@ -200,6 +187,50 @@ class _SelecaoPerfilPageState extends State<SelecaoPerfilPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SenhaField extends StatelessWidget {
+  const _SenhaField({
+    required this.controller,
+    required this.visivel,
+    required this.erro,
+    required this.onToggleVisivel,
+    required this.onChanged,
+    required this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final bool visivel;
+  final String? erro;
+  final VoidCallback onToggleVisivel;
+  final VoidCallback onChanged;
+  final VoidCallback onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: !visivel,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        labelText: 'Senha',
+        border: const OutlineInputBorder(),
+        errorText: erro,
+        suffixIcon: IconButton(
+          icon: Icon(visivel ? Icons.visibility_off : Icons.visibility),
+          onPressed: onToggleVisivel,
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Digite a senha';
+        }
+        return null;
+      },
+      onChanged: (_) => onChanged(),
+      onFieldSubmitted: (_) => onSubmitted(),
     );
   }
 }

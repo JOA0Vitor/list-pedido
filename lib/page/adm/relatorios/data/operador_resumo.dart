@@ -1,5 +1,5 @@
-import 'package:pedidosdp/page/relatorios/relatorios_page.dart';
-import 'package:pedidosdp/page/relatorios/widgets/pedido_mock.dart';
+import 'package:pedidosdp/page/adm/relatorios/relatorios_page.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/pedido_mock.dart';
 
 class OperadorResumo {
   const OperadorResumo({
@@ -10,7 +10,7 @@ class OperadorResumo {
 
   final String nome;
   final int totalPedidos;
-  final double eficiencia; // 0 a 100
+  final double eficiencia; 
 }
 
 List<PedidoMock> _filtrarPorEmpresa(List<PedidoMock> pedidos, int empresaId) {

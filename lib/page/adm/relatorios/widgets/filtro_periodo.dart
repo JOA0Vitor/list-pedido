@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/relatorios/relatorios_page.dart';
+import 'package:pedidosdp/page/adm/relatorios/relatorios_page.dart';
 
 class FiltroPeriodo extends StatelessWidget {
   const FiltroPeriodo({super.key, 

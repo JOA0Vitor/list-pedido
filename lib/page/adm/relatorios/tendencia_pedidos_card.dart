@@ -1,6 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/relatorios/relatorios_page.dart';
+import 'package:pedidosdp/page/adm/relatorios/relatorios_page.dart';
 
 class TendenciaPedidosCard extends StatelessWidget {
   final List<PedidoPorDia> dados;
@@ -110,7 +110,6 @@ class _TendenciaLineChart extends StatelessWidget {
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              // ignore: deprecated_member_use
               color: const Color(0xFF0043AC).withOpacity(0.2),
             ),
           ),
@@ -130,7 +129,6 @@ class PedidoPorDia {
       '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}';
 }
 
-/// Dados mockados — trocar depois por chamada à API.
 List<PedidoPorDia> gerarDadosMockados() {
   final hoje = DateTime.now();
   return List.generate(30, (i) {

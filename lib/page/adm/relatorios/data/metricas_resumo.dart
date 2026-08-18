@@ -1,5 +1,5 @@
-import 'package:pedidosdp/page/relatorios/relatorios_page.dart';
-import 'package:pedidosdp/page/relatorios/widgets/pedido_mock.dart';
+import 'package:pedidosdp/page/adm/relatorios/relatorios_page.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/pedido_mock.dart';
 
 class MetricasResumo {
   const MetricasResumo({

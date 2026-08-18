@@ -27,6 +27,7 @@ dependencies:
   printing: ^5.14.3
   web_socket_channel: ^3.0.3
   fl_chart: ^1.2.0
+  # uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:

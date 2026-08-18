@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
@@ -46,6 +44,7 @@ class CorteResumoPdf {
                 style: const pw.TextStyle(fontSize: 12),
               ),
               pw.SizedBox(height: 16),
+              // ignore: deprecated_member_use
               pw.Table.fromTextArray(
                 headers: ['Tipo', 'Ref', 'Cor', 'Peso Total'],
                 data: itens

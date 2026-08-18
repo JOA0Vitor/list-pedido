@@ -52,6 +52,11 @@ class PedidoRecenteModel {
 
   bool get precisaDeRomaneio => codEtapa == 4;
 
+  String get primeiroNomeRepresentante {
+    final partes = nomeRepresentante.trim().split(RegExp(r'\s+'));
+    return partes.isNotEmpty && partes.first.isNotEmpty ? partes.first : '-';
+  }
+
   static Color corPorEtapa(int codEtapa) {
     switch (codEtapa) {
       case 3:

@@ -63,19 +63,7 @@ class PedidoCorteCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            // InfoColumn(
-            //   label: 'CLIENTE - ${pedido.codEtapa}',
-            //   // value: pedido.codCliente.toString(),
-            //   // value: '',
-            //   value: nomeCliente == ''
-            //       ? _primeirosDoisNomes(nomeCliente)
-            //       : 'Ver mais',
-            //   valueStyle: const TextStyle(
-            //     color: Color(0xFF0B1628),
-            //     fontWeight: FontWeight.bold,
-            //     fontSize: 16,
-            //   ),
-            // ),
+
             const SizedBox(width: 50),
             Expanded(
               flex: 3,
@@ -100,8 +88,6 @@ class PedidoCorteCard extends StatelessWidget {
       ),
     );
   }
-
-  
 }
 
 class EtapaColumn extends StatelessWidget {

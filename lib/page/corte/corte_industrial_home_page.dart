@@ -1,9 +1,10 @@
+// ignore_for_file: unused_field
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pedidosdp/models/corte_model.dart';
-import 'package:pedidosdp/page/corte/agenda_pedido_dialog.dart';
 import 'package:pedidosdp/page/corte/corte_industrial.dart';
 import 'package:pedidosdp/page/corte/list_pedidos_corte.dart';
 import 'package:pedidosdp/page/selecao_perfil_page.dart';
@@ -21,7 +22,6 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
   final _searchController = TextEditingController();
   final _dataInicialController = TextEditingController();
   final _dataFinalController = TextEditingController();
-  // final style = StyleGlobal();
   final labelStyle = TextStyle(fontSize: 16, fontWeight: FontWeight.bold);
   Timer? _timer;
   late Future<List<dynamic>> _futureDadosCorte;
@@ -55,10 +55,9 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
     final termo = _searchController.text.toLowerCase();
     if (termo.isEmpty) return _todosPedidos;
     return _todosPedidos.where((p) {
-      // final nome = (_nomesClientes[p.codCliente] ?? '').toLowerCase();
       return p.codPedido.toLowerCase().contains(
         termo,
-      ) /* || nome.contains(termo) */;
+      );
     }).toList();
   }
 
@@ -90,7 +89,6 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
 
   void _buscarPedidos() {
     setState(() {
-      // _futureDadosCorte = Future.wait([_api.getFilaCorte()]);
       _futureDadosCorte = Future.wait([getFilaCorteMock()]);
     });
   }
@@ -144,7 +142,6 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
-                  // _buscarPedidos();
                   _timer = Timer.periodic(
                     const Duration(minutes: 1),
                     (_) => _buscarPedidos(),
@@ -163,10 +160,7 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
                           children: [
                             Text('Erro: ${snapshot.error}'),
                             const SizedBox(height: 12),
-                            // ElevatedButton(
-                            //   onPressed: _buscarPedidos,
-                            //   child: const Text('Tentar novamente'),
-                            // ),
+                         
                           ],
                         ),
                       );
@@ -195,12 +189,8 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
                       child: PedidosScreenCorte(
                         pedidos: _cortesFiltrados,
                         status: _todosPedidos.length,
-                        // nomesClientes: _nomesClientes,
                         onPedidoTap: (pedido) {
-                          // setState(() {
-                          //   _pedidoSelecionado = pedido;
-                          //   _operadorSelecionado = null;
-                          // });
+                        
                           if (pedido.status == 1) {
                             Navigator.push(
                               context,
@@ -341,7 +331,6 @@ class _CorteIndustrialHomePageState extends State<CorteIndustrialHomePage> {
               padding: const EdgeInsets.only(top: 22),
               child: ElevatedButton(
                 onPressed: () {
-                  // NotificationService.tocarAlerta();
                   Navigator.push(
                     context,
                     MaterialPageRoute(

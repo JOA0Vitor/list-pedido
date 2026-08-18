@@ -4,24 +4,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
-import 'package:pedidosdp/models/clientes_model.dart';
 import 'package:pedidosdp/models/corte_model.dart';
 import 'package:pedidosdp/models/pedido_recentes_model.dart';
-import 'package:pedidosdp/models/pedidos_model.dart';
 import 'package:pedidosdp/models/romaneio_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://187.85.164.196/api/comercial/v10';
-  static const String _baseUrlClientes =
-      'https://187.85.164.196/api/cadastrosgerais/v10';
+  // static const String _baseUrl = 'https://187.85.164.196/api/comercial/v10';
   static const String _baseUrlRomaneio = 'http://192.168.0.36:8000';
   final int empresa = 2;
 
   final String apiToken;
   late final http.Client _client;
 
-  ApiService({required this.apiToken, String baseUrl = _baseUrl}) {
+  ApiService({required this.apiToken, String baseUrl = _baseUrlRomaneio}) {
     final ioClient = HttpClient()
       ..badCertificateCallback = (X509Certificate cert, String host, int port) {
         return true;
@@ -29,143 +24,6 @@ class ApiService {
     _client = IOClient(ioClient);
   }
 
-  static String getUrl(String modulo, String servico) {
-    return '$_baseUrl/$modulo/$servico';
-  }
-
-  Future<PaginatedResponsePedido<PedidoModel>> getListPedidos(
-    int empresa,
-    String dataDigitacaoInicio,
-    String dataDigitacaoFim,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final chaveCache =
-        'pedidos_cache_${empresa}_${dataDigitacaoInicio}_$dataDigitacaoFim';
-
-    final uri = Uri.parse('$_baseUrl/pedidoVenda/').replace(
-      queryParameters: {
-        // 'empresa': empresa.toString(),
-        'dataDigitacaoInicio': dataDigitacaoInicio,
-        'dataDigitacaoFim': dataDigitacaoFim,
-      },
-    );
-
-    try {
-      final response = await _client
-          .get(
-            uri,
-            headers: {
-              'accept': 'application/json',
-              'empresa': empresa.toString(),
-              'Authorization': apiToken,
-              'dataDigitacaoInicio': dataDigitacaoInicio,
-              'dataDigitacaoFim': dataDigitacaoFim,
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      print('STATUS PEDIDOS: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final resultado = PaginatedResponsePedido.fromJson(
-          jsonDecode(response.body),
-          PedidoModel.fromJson,
-        );
-
-        if (resultado.data.isNotEmpty) {
-          await prefs.setString(chaveCache, response.body);
-        }
-        return resultado;
-      }
-
-      return _lerCacheOuFalhar(
-        prefs,
-        chaveCache,
-        'Erro ${response.statusCode}: ${response.body}',
-      );
-    } on TimeoutException {
-      return _lerCacheOuFalhar(
-        prefs,
-        chaveCache,
-        'Servidor não respondeu a tempo.',
-      );
-    } on SocketException {
-      return _lerCacheOuFalhar(
-        prefs,
-        chaveCache,
-        'Sem conexão com a internet.',
-      );
-    } catch (e) {
-      return _lerCacheOuFalhar(prefs, chaveCache, 'Erro inesperado: $e');
-    }
-  }
-
-  PaginatedResponsePedido<PedidoModel> _lerCacheOuFalhar(
-    SharedPreferences prefs,
-    String chaveCache,
-    String mensagemErro,
-  ) {
-    final salvo = prefs.getString(chaveCache);
-    if (salvo != null) {
-      print('[cache local] usando dado salvo por causa de: $mensagemErro');
-      return PaginatedResponsePedido.fromJson(
-        jsonDecode(salvo),
-        PedidoModel.fromJson,
-      );
-    }
-    throw Exception(mensagemErro);
-  }
-
-  Future<PaginatedResponseClientes<ClientesModel>> getClientes(
-    int empresa, {
-    String? continuationToken,
-    // int paginacao = 1165,// Preciso achar uma solução para isso, ta demorando muito para pegar os dados
-    int paginacao = 165,
-    int situacao = 1,
-  }) async {
-    final uri = Uri.parse('$_baseUrlClientes/cliente').replace(
-      queryParameters: {
-        'situacao': situacao.toString(),
-        'paginacao': paginacao.toString(),
-        if (continuationToken != null && continuationToken.isNotEmpty)
-          'continuationToken': continuationToken,
-      },
-    );
-
-    debugPrint('Cliente uri: $uri');
-    try {
-      final response = await _client
-          .get(
-            uri,
-            headers: {
-              'accept': 'application/json',
-              'empresa': empresa.toString(),
-              'Authorization': 'Bearer $apiToken',
-              // 'situacao': situacao.toString(),
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-      print('Testando conexão com $_baseUrl...');
-      print('STATUS CLIENTES: ${response.statusCode}');
-      print('BODY CLIENTES: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        return PaginatedResponseClientes.fromJson(
-          jsonData,
-          ClientesModel.fromJson,
-        );
-      } else {
-        throw Exception('Erro API: ${response.statusCode} - ${response.body}');
-      }
-    } on TimeoutException {
-      throw Exception('Servidor não respondeu a tempo. Verifique sua conexão.');
-    } on SocketException {
-      throw Exception('Sem conexão com a internet.');
-    } catch (e) {
-      throw Exception('Erro inesperado: $e');
-    }
-  }
 
   Future<PaginatedResponseRomaneio<RomaneioModel>> getRomaneio(
     int empresa,
@@ -322,31 +180,79 @@ class ApiService {
     return (json['gavetas'] as List).cast<String>();
   }
 
-  Future<List<String>> removerGaveta(String chave, String gaveta) async {
-    final uri = Uri.parse(
-      '$_baseUrlRomaneio/localizacao/$chave/gaveta/$gaveta',
-    );
-    final response = await _client.delete(
-      uri,
-      headers: {'x-api-key': apiToken},
-    );
-    if (response.statusCode != 200) {
-      throw Exception('Erro ao remover gaveta: ${response.statusCode}');
-    }
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return (json['gavetas'] as List).cast<String>();
-  }
+  // Future<List<String>> removerGaveta(String chave, String gaveta) async {
+  //   final uri = Uri.parse(
+  //     '$_baseUrlRomaneio/localizacao/$chave/gaveta/$gaveta',
+  //   );
+  //   final response = await _client.delete(
+  //     uri,
+  //     headers: {'x-api-key': apiToken},
+  //   );
+  //   if (response.statusCode != 200) {
+  //     throw Exception('Erro ao remover gaveta: ${response.statusCode}');
+  //   }
+  //   final json = jsonDecode(response.body) as Map<String, dynamic>;
+  //   return (json['gavetas'] as List).cast<String>();
+  // }
 
   Future<Map<String, dynamic>> verificarStatusRomaneio(String codPedido) async {
     final uri = Uri.parse('$_baseUrlRomaneio/romaneio/$codPedido/status');
     final response = await _client.get(uri, headers: {'x-api-key': apiToken});
     if (response.statusCode != 200) {
       throw Exception('Erro ao verificar status do pedido');
-}
+    }
     return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<String> entrarNoRomaneio(
+    String codPedido,
+    String operador,
+    String dispositivoId,
+  ) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/romaneio/$codPedido/entrar');
+    final response = await _client.post(
+      uri,
+      headers: {'x-api-key': apiToken, 'Content-Type': 'application/json'},
+      body: jsonEncode({'operador': operador, 'dispositivoId': dispositivoId}),
+    );
+
+    if (response.statusCode == 409) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      throw PedidoEmUsoException(body['detail'] as String? ?? 'Pedido em uso');
+    }
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao entrar no romaneio: ${response.statusCode}');
+    }
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return body['token'] as String;
+  }
+
+  Future<bool> heartbeatRomaneio(String codPedido, String token) async {
+    final uri = Uri.parse('$_baseUrlRomaneio/romaneio/$codPedido/heartbeat');
+    final response = await _client.post(
+      uri,
+      headers: {'x-api-key': apiToken, 'Content-Type': 'application/json'},
+      body: jsonEncode({'token': token}),
+    );
+    return response.statusCode == 200;
+  }
+
+  Future<void> sairDoRomaneio(String codPedido, String token) async {
+    final uri = Uri.parse(
+      '$_baseUrlRomaneio/romaneio/$codPedido/entrar',
+    ).replace(queryParameters: {'token': token});
+    await _client.delete(uri, headers: {'x-api-key': apiToken});
   }
 
   void dispose() {
     _client.close();
   }
+}
+
+class PedidoEmUsoException implements Exception {
+  final String mensagem;
+  PedidoEmUsoException(this.mensagem);
+  @override
+  String toString() => mensagem;
 }

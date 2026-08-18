@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/relatorios/data/operador_resumo.dart';
-import 'package:pedidosdp/page/relatorios/relatorios_page.dart';
-import 'package:pedidosdp/page/relatorios/widgets/header_cell.dart';
-import 'package:pedidosdp/page/relatorios/widgets/operador_row.dart';
-import 'package:pedidosdp/page/relatorios/widgets/pedido_mock.dart';
+import 'package:pedidosdp/page/adm/relatorios/data/operador_resumo.dart';
+import 'package:pedidosdp/page/adm/relatorios/relatorios_page.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/header_cell.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/operador_row.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/pedido_mock.dart';
 
 class ResumoOperadoresCard extends StatefulWidget {
   const ResumoOperadoresCard({

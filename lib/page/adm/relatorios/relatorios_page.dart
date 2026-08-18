@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/api_configuracao/api_configuracao.dart';
-import 'package:pedidosdp/page/relatorios/data/empresa_service.dart';
-import 'package:pedidosdp/page/relatorios/data/metricas_resumo.dart';
-import 'package:pedidosdp/page/relatorios/metricas_row.dart';
-import 'package:pedidosdp/page/relatorios/resumo_operadores_card.dart';
-import 'package:pedidosdp/page/relatorios/tendencia_pedidos_card.dart';
-import 'package:pedidosdp/page/relatorios/widgets/filtro_periodo.dart';
-import 'package:pedidosdp/page/relatorios/widgets/pedido_mock.dart';
+import 'package:pedidosdp/page/adm/api_configuracao/api_configuracao.dart';
+import 'package:pedidosdp/page/adm/relatorios/data/empresa_service.dart';
+import 'package:pedidosdp/page/adm/relatorios/data/metricas_resumo.dart';
+import 'package:pedidosdp/page/adm/relatorios/metricas_row.dart';
+import 'package:pedidosdp/page/adm/relatorios/resumo_operadores_card.dart';
+import 'package:pedidosdp/page/adm/relatorios/tendencia_pedidos_card.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/filtro_periodo.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/pedido_mock.dart';
 
 enum Periodo {
   dias7(dias: 7, label: '7 dias'),
@@ -36,14 +36,7 @@ class _RelatoriosState extends State<RelatoriosPage> {
 
   @override
   Widget build(BuildContext context) {
-    // final metricas = calcularMetricas(
-    //   _pedidosMock,
-    //   _periodoSelecionado,
-    // );
-    // final dadosTendencia = agruparPedidosPorDia(
-    //   _pedidosMock,
-    //   _periodoSelecionado,
-    // );
+   
 
     return ValueListenableBuilder<Empresa?>(
       valueListenable: EmpresaService.instance.empresaAtual,

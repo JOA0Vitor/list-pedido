@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/relatorios/data/metricas_resumo.dart';
-import 'package:pedidosdp/page/relatorios/widgets/metric_card.dart';
-import 'package:pedidosdp/page/relatorios/widgets/trend_visual.dart';
+import 'package:pedidosdp/page/adm/relatorios/data/metricas_resumo.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/metric_card.dart';
+import 'package:pedidosdp/page/adm/relatorios/widgets/trend_visual.dart';
 
 class MetricasRow extends StatelessWidget {
   const MetricasRow({super.key, required this.metricas});

@@ -166,7 +166,6 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
     for (final node in _focusNodes.values) {
       node.dispose();
     }
-    // _api.dispose();
     super.dispose();
   }
 
@@ -269,7 +268,6 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
                       children: [
                         _headerCell('Tipo', flex: 2, align: TextAlign.center),
                         _headerCell('Ref', flex: 2, align: TextAlign.right),
-                        // _headerCell('Cor', flex: 2, align: TextAlign.right),
                         _headerCell('Peso', flex: 2, align: TextAlign.right),
                         _headerCell(
                           'Qtd.camisas',
@@ -485,54 +483,7 @@ class _CorteIndustrialState extends State<CorteIndustrial> {
             ),
           ),
           SizedBox(height: 56),
-          // Positioned(
-          //   left: 40,
-          //   right: 40,
-          //   bottom: 6,
-          //   child: ElevatedButton(
-          //     onPressed: () async {
-          //       setState(() => _finalizando = true);
-          //       try {
-          //         final itens = _montarResumoParaPdf();
-          //         final pdfBytes = await corterResumoPdf.gerarPdfPedido(
-          //           codPedido: widget.codPedido,
-          //           itens: itens,
-          //         );
-
-          //         await Printing.sharePdf(
-          //           bytes: pdfBytes,
-          //           filename: 'pedido_${widget.codPedido}.pdf',
-          //         );
-          //       } finally {
-          //         setState(() => _finalizando = false);
-          //       }
-          //     },
-          //     style: ElevatedButton.styleFrom(
-          //       backgroundColor: const Color(0xFF0043AC),
-          //       minimumSize: const Size(double.infinity, 44),
-          //       shape: RoundedRectangleBorder(
-          //         borderRadius: BorderRadius.circular(8),
-          //       ),
-          //     ),
-          //     child: _finalizando
-          //         ? const SizedBox(
-          //             width: 18,
-          //             height: 18,
-          //             child: CircularProgressIndicator(
-          //               strokeWidth: 2,
-          //               color: Colors.white,
-          //             ),
-          //           )
-          //         : const Text(
-          //             'Finalizar',
-          //             style: TextStyle(
-          //               color: Colors.white,
-          //               fontSize: 18,
-          //               fontWeight: FontWeight.bold,
-          //             ),
-          //           ),
-          //   ),
-          // ),
+         
         ],
       ),
     );

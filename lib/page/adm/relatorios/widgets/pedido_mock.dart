@@ -1,8 +1,8 @@
 import 'dart:math';
 
-import 'package:pedidosdp/page/api_configuracao/api_configuracao.dart';
-import 'package:pedidosdp/page/relatorios/relatorios_page.dart';
-import 'package:pedidosdp/page/relatorios/tendencia_pedidos_card.dart';
+import 'package:pedidosdp/page/adm/api_configuracao/api_configuracao.dart';
+import 'package:pedidosdp/page/adm/relatorios/relatorios_page.dart';
+import 'package:pedidosdp/page/adm/relatorios/tendencia_pedidos_card.dart';
 
 class PedidoMock {
   final DateTime data;

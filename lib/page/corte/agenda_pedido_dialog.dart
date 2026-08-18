@@ -71,16 +71,14 @@ class _AgendarPedidoDialogState extends State<AgendarPedidoDialog> {
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 380), // <- largura fixa
+        constraints: const BoxConstraints(maxWidth: 380),
 
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: SingleChildScrollView(
             child: Column(
-              // mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // HEADER — cinza claro
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -109,7 +107,6 @@ class _AgendarPedidoDialogState extends State<AgendarPedidoDialog> {
                   ),
                 ),
 
-                // CONTEÚDO — branco
                 Container(
                   width: double.infinity,
                   color: Colors.white,
@@ -175,7 +172,6 @@ class _AgendarPedidoDialogState extends State<AgendarPedidoDialog> {
                   ),
                 ),
 
-                // FOOTER — cinza claro
                 Container(
                   width: double.infinity,
                   color: _lightGray,

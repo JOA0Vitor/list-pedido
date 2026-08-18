@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:pedidosdp/page/api_configuracao/api_configuracao.dart';
-import 'package:pedidosdp/page/relatorios/relatorios_page.dart';
+import 'package:pedidosdp/page/adm/api_configuracao/api_configuracao.dart';
+import 'package:pedidosdp/page/adm/relatorios/relatorios_page.dart';
 import 'package:pedidosdp/page/selecao_perfil_page.dart';
 import 'package:pedidosdp/widgets/drawer_item.dart';
 import 'package:pedidosdp/widgets/period_button.dart';
 import 'package:pedidosdp/widgets/summary_stat.dart';
-// import 'package:pedidosdp/models/pedido_recente_model.dart';
 
 class AdmPage extends StatefulWidget {
   // final List<PedidoRecenteModel> pedidos;

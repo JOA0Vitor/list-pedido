@@ -229,18 +229,16 @@ class _HomePageState extends State<HomePage> {
                           ),
                           valueStyle: const TextStyle(
                             color: Color(0xFF0B1628),
-                            fontWeight: FontWeight.w300,
+                            fontWeight: FontWeight.w400,
                             fontSize: 16,
                           ),
                         ),
                         InfoColumn(
-                          label: 'Checkout',
-                          value: _pedidoSelecionado!.codEtapaExibicao == 4
-                              ? 'Em processo'
-                              : '',
+                          label: 'Representante',
+                          value: _pedidoSelecionado!.primeiroNomeRepresentante,
                           valueStyle: const TextStyle(
                             color: Color(0xFF0B1628),
-                            fontWeight: FontWeight.w300,
+                            fontWeight: FontWeight.w500,
                             fontSize: 16,
                           ),
                         ),
@@ -365,8 +363,6 @@ class _HomePageState extends State<HomePage> {
                                         return;
                                       }
                                     } catch (e) {
-                                      // se a checagem falhar (erro de rede, etc.),
-                                      // não trava o usuário por causa disso -- deixa passar
                                       debugPrint(
                                         'Erro ao checar status do romaneio: $e',
                                       );
@@ -382,6 +378,11 @@ class _HomePageState extends State<HomePage> {
                                                   _pedidoSelecionado!.codPedido,
                                               nameOperador:
                                                   _operadorSelecionado!,
+                                              nameRepresentante:
+                                                  _pedidoSelecionado!
+                                                      .primeiroNomeRepresentante,
+                                              nameCliente: _pedidoSelecionado!
+                                                  .nomeCliente,
                                             ),
                                           ),
                                         );
@@ -426,6 +427,9 @@ class _HomePageState extends State<HomePage> {
                               builder: (context) => RomaneioPage(
                                 codPedido: _pedidoSelecionado!.codPedido,
                                 somenteLeitura: true,
+                                nameRepresentante: _pedidoSelecionado!
+                                    .primeiroNomeRepresentante,
+                                nameCliente: _pedidoSelecionado!.nomeCliente,
                               ),
                             ),
                           );
@@ -460,14 +464,7 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => const SelecaoPerfilPage(),
-              //   ),
-              // );
-            },
+            onPressed: () {},
             icon: const Icon(Icons.info_outline, color: Color(0xFF0043AC)),
           ),
         ],

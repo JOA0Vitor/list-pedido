@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pedidosdp/models/corte_model.dart';
-import 'package:pedidosdp/models/pedidos_model.dart';
 import 'package:pedidosdp/page/corte/agenda_pedido_dialog.dart';
 import 'package:pedidosdp/page/corte/pedido_corte_card.dart';
 
@@ -33,7 +32,7 @@ class PedidosScreenCorte extends StatelessWidget {
           onTap: () async {
             print('tocou ${pedido.codPedido} status ${pedido.status}');
             if (pedido.status == 1) {
-              _showAgendarDialog(context, pedido); // onPedidoTap(pedido);
+              _showAgendarDialog(context, pedido); 
             }
           },
         );
